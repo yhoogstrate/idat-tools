@@ -161,13 +161,27 @@ class IDATfile(IDATdata):
         
         probe_ids = npread(fh_in, '<u4', self.data_array_n_probes)
         
-        if not np.all(probe_ids > 0):
+        if np.any(probe_ids <= 0):
             raise Exception("Wrong probe id's found")
         
         if np.any((probe_ids[1:] - probe_ids[:-1]) <= 0):
             raise Exception("probe id's are not unique or not incremental")
         
         return probe_ids
+
+    @beartype
+    def parse_std_devs(self, fh_in: BufferedReader, section_seek_index: dict) -> ndarray:
+        fh_in.seek(section_seek_index['PROBE_STD_DEVS'])
+        
+        if self.data_array_n_probes is None:
+            self.parse_array_n_probes(fh_in, section_seek_index)
+        
+        std_devs = npread(fh_in, '<u4', self.data_array_n_probes)
+        
+        if np.any(std_devs < 0):
+            raise Exception("Wrong std dev found (0 or negative)")
+        
+        return std_devs
 
 
     @beartype
@@ -186,7 +200,9 @@ class IDATfile(IDATdata):
             
             
             probe_ids = self.parse_probe_ids(fh_in, section_seek_index)
-            #std_devs =  self.parse_std_devs(fh_in, section_seek_index)
+            print(probe_ids)
+            std_devs =  self.parse_std_devs(fh_in, section_seek_index)
+            print(std_devs)
         
             
         
