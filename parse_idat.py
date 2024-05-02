@@ -119,27 +119,25 @@ class IDATfile(IDATdata):
     
     @beartype
     def parse_section_index(self, fh_in: BufferedReader, section_seek_index: dict) -> dict:
+        fh_in.seek(section_seek_index['SECTION_INDEX_N'])
+        n_sections = read_int(fh_in)
         
+        for i in range(n_sections):
+
         return section_seek_index
     
     @beartype
     def parse(self) -> int:
-        section_seek_index = { # static entries
+        section_seek_index = { # static entries - todo: make class
             'FILE_MAGIC': 0,
             'IDAT_VERSION': 4,
-            'SECTION_INDEX_N': 12,
-            'SECTION_INDEX': 16
+            'SECTION_INDEX_N': 12
         }
-        
-        print(section_seek_index)
         
         with open(self.idat_filename, "rb") as fh_in:
             self.parse_file_magic(fh_in, section_seek_index)
-            print(section_seek_index)
-        
             self.parse_idat_version(fh_in, section_seek_index)
             self.parse_section_index(fh_in, section_seek_index)
-            print(section_seek_index)
         
         return 0
 
