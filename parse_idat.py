@@ -9,17 +9,7 @@
 #open(filepath_or_buffer, 'rb')
 
 
-def read_char(infile, num_bytes):
-    """Converts an array of bytes to a string.
-
-    Arguments:
-        infile {file-like} -- The binary file to read the select number of bytes.
-        num_bytes {integer} -- The number of bytes to read and parse.
-
-    Returns:
-        [string] -- UTF-8 decoded string value.
-    """
-    return infile.read(num_bytes).decode('utf-8')
+from parser import read_char, read_long
 
 
 def get_magic(fh_in):
@@ -28,15 +18,15 @@ def get_magic(fh_in):
     
     return file_type
 
-
-"""
-def is_idat_file(fh_in):
-    idat_file.seek(0) # IdatHeaderLocation.FILE_TYPE.value
-    file_type = read_char(idat_file, len(expected))
-    return file_type.lower() == expected.lower()
-"""
+def get_idat_version(fh_in):
+    fh_in.seek(4) # IdatHeaderLocation.VERSION.value
+    idat_version = read_long(fh_in)
+    
+    return idat_version
 
 
 with open("207513420127_R08C01_Grn.idat", "rb") as fh_in:
-    print("1. Magic: ["+get_magic(fh_in)+"]")
+    print("1.  Magic:        ["+get_magic(fh_in)+"]")
+    print("2.  IDAT version: ["+str(get_idat_version(fh_in))+"]")
+    
 
