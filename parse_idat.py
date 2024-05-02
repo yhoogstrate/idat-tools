@@ -60,7 +60,8 @@ section_locations = {
 
 class IDATdata:
     def __init__(self):
-        self.data_version = None
+        self.data_file_magic = None
+        self.data_idat_version = None
         self.data_section_order = None
         self.data_n_probes = None
         self.data_sections = {
@@ -78,6 +79,20 @@ class IDATdata:
             'UNKNOWN_7': None,
             'RUN_INFO': None
         }
+    
+    @beartype
+    def set_file_magic(self, file_magic: str) -> None:
+        if file_magic != "IDAT":
+            raise Exception("Invalid file format")
+        else:
+            self.data_file_magic = file_magic
+    
+    @beartype
+    def set_idat_version(self, idat_version: int) -> None:
+        if idat_version != 3:
+            raise Exception("Only tested with idat version 3")
+        else:
+            self.data_idat_version = idat_version
 
 
 
@@ -89,25 +104,52 @@ class IDATfile(IDATdata):
         self.parse()
     
     @beartype
-    def parse_magic(self, fh_in: BufferedReader, section_seek_index):
-        print(type(fh_in))
+    def parse_file_magic(self, fh_in: BufferedReader, section_seek_index: dict) -> None:
+        fh_in.seek(section_seek_index['FILE_MAGIC'])
+        self.set_file_magic(read_char(fh_in, 4))
+    
+    @beartype
+    def parse_idat_version(self, fh_in: BufferedReader, section_seek_index: dict) -> int:
+        fh_in.seek(section_seek_index['IDAT_VERSION'])
+        idat_version = read_long(fh_in)
+        
+        self.set_idat_version(idat_version)
+        
+        return idat_version
+    
+    @beartype
+    def parse_section_index(self, fh_in: BufferedReader, section_seek_index: dict) -> dict:
+        
+        return section_seek_index
     
     @beartype
     def parse(self) -> int:
-        section_seek_index = {
+        section_seek_index = { # static entries
             'FILE_MAGIC': 0,
             'IDAT_VERSION': 4,
             'SECTION_INDEX_N': 12,
             'SECTION_INDEX': 16
         }
         
+        print(section_seek_index)
+        
         with open(self.idat_filename, "rb") as fh_in:
-            self.parse_magic(fh_in, section_seek_index)
+            self.parse_file_magic(fh_in, section_seek_index)
+            print(section_seek_index)
+        
+            self.parse_idat_version(fh_in, section_seek_index)
+            self.parse_section_index(fh_in, section_seek_index)
+            print(section_seek_index)
         
         return 0
 
 
 d_red = IDATfile(Path("207513420108_R01C01_Red.idat"))
+
+
+import sys
+sys.exit(0)
+
 d_grn = IDATfile(Path("207513420108_R01C01_Grn.idat"))
 
 
