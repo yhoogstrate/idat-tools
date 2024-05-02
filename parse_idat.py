@@ -119,21 +119,25 @@ class IDATfile(IDATdata):
     
     @beartype
     def parse_section_index(self, fh_in: BufferedReader, section_seek_index: dict) -> dict:
+        self.data_section_order = []
+        
         fh_in.seek(section_seek_index['SECTION_INDEX_N'])
         n_sections = read_int(fh_in)
         
         for i in range(n_sections):
-            section_type = read_short(fh_in)
+            section_type_int = read_short(fh_in)
             
-            if section_type not in section_names:
-                raise Exception("Unimplemented section type: "+str(section_type))
+            if section_type_int not in section_names:
+                raise Exception("Unimplemented section type: "+str(section_type_int))
             else:
-                section_type = section_names[section_type]
+                section_type = section_names[section_type_int]
             
-            print(section_type, ":", read_long(fh_in))
+            self.data_section_order.append(section_type)
+            section_seek_index[section_type] = read_long(fh_in)
 
         return section_seek_index
-    
+
+
     @beartype
     def parse(self) -> int:
         section_seek_index = { # static entries - todo: make class
