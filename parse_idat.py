@@ -159,13 +159,13 @@ class IDATfile(IDATdata):
         if self.data_array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        probe_ids = npread(fh_in, '<i4', self.data_array_n_probes)
+        probe_ids = npread(fh_in, '<u4', self.data_array_n_probes)
         
         if not np.all(probe_ids > 0):
             raise Exception("Wrong probe id's found")
         
-        if len(probe_ids) != len(np.unique(probe_ids)):
-            raise Exception("probe id's are not unique")
+        if np.any((probe_ids[1:] - probe_ids[:-1]) <= 0):
+            raise Exception("probe id's are not unique or not incremental")
         
         return probe_ids
 
@@ -184,8 +184,9 @@ class IDATfile(IDATdata):
             self.parse_section_index(fh_in, section_seek_index)
             self.parse_array_n_probes(fh_in, section_seek_index)
             
-            probe_ids = self.parse_probe_ids(fh_in, section_seek_index)
             
+            probe_ids = self.parse_probe_ids(fh_in, section_seek_index)
+            #std_devs =  self.parse_std_devs(fh_in, section_seek_index)
         
             
         
@@ -343,7 +344,7 @@ with open(Path("GSM6379997_203927450093_R01C01_Grn.idat"), "rb") as fh_in:
     
     offset = [_ for _ in offsets if offsets[_] == section_locations['PROBE_IDS']][0]
     fh_in.seek(offset)
-    illumn = npread(fh_in, '<i4', n_snps_read) # was <u1
+    illumn = npread(fh_in, '<u4', n_snps_read) # was <u1
     
     print("6. Illumina IDs:  " + str(illumn[0:8]) + "    (n="+str(len(illumn))+")")
     print("   [midblock]  :  " + str(midblock[0:8]) + "    (n="+str(len(midblock))+")")
