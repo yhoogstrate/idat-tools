@@ -88,10 +88,36 @@ def get_section_offsets(fh_in):
 
     return offsets
 
+"""
+210 + 
+(1052641*4) +
+(1052641*4)+ 
+(1052641*1) + 
+4 + (1052641*4)  # redundant blokc??
+(4+1+1+12+12+6+1+4+1+1+1+1+1+1+1)
 
-with open("207513420127_R08C01_Red.idat", "rb") as fh_in:
+"""
+
+with open("207513420108_R01C01_Grn.idat", "rb") as fh_in:
     print("1.  Magic:        ["+get_magic(fh_in)+"]")
     print("2.  IDAT version: ["+str(get_idat_version(fh_in))+"]")
+    print("3.  bytes .... ")
+    
+    fh_in.seek(12) # IdatHeaderLocation.FILE_TYPE.value
+    
+    out = ""
+    for i in range(205 - 12):
+        out += str(read_byte(fh_in)) + " "
+        
+        if i % 8 == 7:
+            out += "  "
+        
+        if i % 32 == 31:
+            print(out)
+            out = ""
+    
+    print(out)
+    
     print("3.  section offsets:")
     
     offsets = get_section_offsets(fh_in)
@@ -116,6 +142,7 @@ with open("207513420127_R08C01_Red.idat", "rb") as fh_in:
             #self.n_beads = npread(idat_file, '<u1', self.n_snps_read) # was <u1
 
         elif key == 200:
+            fh_in.seek(offset)
             midblock = []
             for i in range(read_int(fh_in)):
                 midblock.append(read_int(fh_in))
@@ -125,7 +152,7 @@ with open("207513420127_R08C01_Red.idat", "rb") as fh_in:
         elif key == 300:
             fh_in.seek(offset)
             for i in range(read_int(fh_in)):
-                print("    => [" + str(read_string(fh_in))+"]")
+                print("    => "+str(i+1)+". [" + str(read_string(fh_in))+"][" + str(read_string(fh_in))+"][" + str(read_string(fh_in))+"][" + str(read_string(fh_in))+"][" + str(read_string(fh_in))+"]")
             
         elif key == 400:
             fh_in.seek(offset)
@@ -185,7 +212,21 @@ with open("207513420127_R08C01_Red.idat", "rb") as fh_in:
     fh_in.seek(offset)
     illumn = npread(fh_in, '<i4', n_snps_read) # was <u1
     
-    print("5. Illumina:  " + str(illumn[0:8]) + "    (n="+str(len(illumn))+")")
+    print("5. Illumina IDs:  " + str(illumn[0:8]) + "    (n="+str(len(illumn))+")")
+
+
+    offset = [_ for _ in offsets if offsets[_] == section_locations['MEAN']][0]
+    fh_in.seek(offset)
+    mean = npread(fh_in, '<i4', n_snps_read) # was <u1
+    
+    print("6. Means:  " + str(mean[0:7]) + "    (n="+str(len(mean))+")")
+    
+    
+    offset = [_ for _ in offsets if offsets[_] == section_locations['STD_DEV']][0]
+    fh_in.seek(offset)
+    sds = npread(fh_in, '<i4', n_snps_read) # was <u1
+    
+    print("6. Stddevs:  " + str(sds[0:7]) + "    (n="+str(len(sds))+")")
 
 
 
