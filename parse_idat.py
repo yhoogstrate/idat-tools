@@ -6,6 +6,7 @@
 
 
 from parser import *
+import pandas as pd
 
 
 section_names = {
@@ -61,6 +62,9 @@ def get_magic(fh_in):
 
 def get_idat_version(fh_in):
     fh_in.seek(4) # IdatHeaderLocation.VERSION.value
+    print("    => [" + str(read_byte(fh_in))+"][" + str(read_byte(fh_in))+"][" + str(read_byte(fh_in))+"][" + str(read_byte(fh_in))+"][" + str(read_byte(fh_in))+"][" + str(read_byte(fh_in))+"][" + str(read_byte(fh_in))+"][" + str(read_byte(fh_in))+"]")
+
+    fh_in.seek(4) # IdatHeaderLocation.VERSION.value
     idat_version = read_long(fh_in)
     
     return idat_version
@@ -97,7 +101,7 @@ def get_section_offsets(fh_in):
     return offsets
 
 
-with open("207513420108_R01C01_Grn.idat", "rb") as fh_in:
+with open("207513420108_R01C01_Red.idat", "rb") as fh_in:
     print("1.  Magic:        ["+get_magic(fh_in)+"]")
     print("2.  IDAT version: ["+str(get_idat_version(fh_in))+"]")
     print("3.  section offsets:")
@@ -130,7 +134,9 @@ with open("207513420108_R01C01_Grn.idat", "rb") as fh_in:
             for i in range(read_int(fh_in)):
                 midblock.append(read_int(fh_in))
             
+            midblock = np.array(midblock)
             print("    => len: " + str(len(midblock)) + ",  [" + str(midblock[0]) + ", "+str(midblock[1]) + ", ..., "  + str(midblock[-2]) + ", "+str(midblock[-1]) + "]")
+
 
         elif key == 300:
             fh_in.seek(offset)
@@ -196,6 +202,12 @@ with open("207513420108_R01C01_Grn.idat", "rb") as fh_in:
     illumn = npread(fh_in, '<i4', n_snps_read) # was <u1
     
     print("6. Illumina IDs:  " + str(illumn[0:8]) + "    (n="+str(len(illumn))+")")
+    print("   [midblock]  :  " + str(midblock[0:8]) + "    (n="+str(len(midblock))+")")
+    
+    if np.all(illumn == midblock):
+        print("   => idenictal")
+    else:
+        raise Exception("discrepancies between identifier blocks")
 
 
     offset = [_ for _ in offsets if offsets[_] == section_locations['MEAN']][0]
@@ -207,9 +219,18 @@ with open("207513420108_R01C01_Grn.idat", "rb") as fh_in:
     
     offset = [_ for _ in offsets if offsets[_] == section_locations['STD_DEV']][0]
     fh_in.seek(offset)
-    sds = npread(fh_in, '<i4', n_snps_read) # was <u1
+    sd = npread(fh_in, '<i4', n_snps_read) # was <u1
     
-    print("8. Stddevs:  " + str(sds[0:7]) + "    (n="+str(len(sds))+")")
+    print("8. Stddevs:  " + str(sd[0:7]) + "    (n="+str(len(sd))+")")
+    
+    
+    df = pd.DataFrame({
+                'probe_id': illumn,
+                'probe_n_beads': n_beads,
+                'probe_mean': mean,
+                'probe_sd': sd })
+    
+    print(df)
 
 
 
