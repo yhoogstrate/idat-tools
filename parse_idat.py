@@ -356,14 +356,14 @@ with open(Path("GSM6379997_203927450093_R01C01_Grn.idat"), "rb") as fh_in:
 
     offset = [_ for _ in offsets if offsets[_] == section_locations['PROBE_MEAN_INTENSITIES']][0]
     fh_in.seek(offset)
-    PROBE_MEAN_INTENSITIES = npread(fh_in, '<i4', n_snps_read) # was <u1
+    PROBE_MEAN_INTENSITIES = npread(fh_in, '<u4', n_snps_read)
     
     print("7. PROBE_MEAN_INTENSITIESs:  " + str(PROBE_MEAN_INTENSITIES[0:7]) + "    (n="+str(len(PROBE_MEAN_INTENSITIES))+")")
     
     
     offset = [_ for _ in offsets if offsets[_] == section_locations['PROBE_STD_DEVS']][0]
     fh_in.seek(offset)
-    sd = npread(fh_in, '<i4', n_snps_read) # was <u1
+    sd = npread(fh_in, '<u4', n_snps_read)
     
     print("8. Stddevs:  " + str(sd[0:7]) + "    (n="+str(len(sd))+")")
     
@@ -371,7 +371,7 @@ with open(Path("GSM6379997_203927450093_R01C01_Grn.idat"), "rb") as fh_in:
     df = pd.DataFrame({
                 'probe_id': illumn,
                 'probe_n_beads': n_beads,
-                'probe_PROBE_MEAN_INTENSITIES': PROBE_MEAN_INTENSITIES,
+                'probe_mean_intensities': PROBE_MEAN_INTENSITIES,
                 'probe_sd': sd })
     
     print(df)
