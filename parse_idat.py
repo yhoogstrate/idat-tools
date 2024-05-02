@@ -8,6 +8,8 @@
 from parser import *
 from beartype import beartype
 import pandas as pd
+from numpy import ndarray
+import numpy as np
 from pathlib import Path
 from _io import BufferedReader
 
@@ -63,7 +65,7 @@ class IDATdata:
         self.data_file_magic = None
         self.data_idat_version = None
         self.data_section_order = None
-        self.data_n_probes = None
+        self.data_array_n_probes = None
         self.data_sections = {
             'ARRAY_RED_GREEN': None,
             'ARRAY_MANIFEST': None,
@@ -116,7 +118,7 @@ class IDATfile(IDATdata):
         self.set_idat_version(idat_version)
         
         return idat_version
-    
+        
     @beartype
     def parse_section_index(self, fh_in: BufferedReader, section_seek_index: dict) -> dict:
         self.data_section_order = []
@@ -136,6 +138,36 @@ class IDATfile(IDATdata):
             section_seek_index[section_type] = read_long(fh_in)
 
         return section_seek_index
+    
+    @beartype
+    def parse_array_n_probes(self, fh_in: BufferedReader, section_seek_index: dict) -> int:
+        fh_in.seek(section_seek_index['ARRAY_N_PROBES'])
+        array_n_probes = read_int(fh_in)
+        
+        if array_n_probes <= 0:
+            raise Exception("Invalid number of probes: " + str(array_n_probes))
+        else:
+            self.data_array_n_probes = array_n_probes
+        
+        return array_n_probes
+
+
+    @beartype
+    def parse_probe_ids(self, fh_in: BufferedReader, section_seek_index: dict) -> ndarray:
+        fh_in.seek(section_seek_index['PROBE_IDS'])
+        
+        if self.data_array_n_probes is None:
+            self.parse_array_n_probes(fh_in, section_seek_index)
+        
+        probe_ids = npread(fh_in, '<i4', self.data_array_n_probes)
+        
+        if not np.all(probe_ids > 0):
+            raise Exception("Wrong probe id's found")
+        
+        if len(probe_ids) != len(np.unique(probe_ids)):
+            raise Exception("probe id's are not unique")
+        
+        return probe_ids
 
 
     @beartype
@@ -150,6 +182,12 @@ class IDATfile(IDATdata):
             self.parse_file_magic(fh_in, section_seek_index)
             self.parse_idat_version(fh_in, section_seek_index)
             self.parse_section_index(fh_in, section_seek_index)
+            self.parse_array_n_probes(fh_in, section_seek_index)
+            
+            probe_ids = self.parse_probe_ids(fh_in, section_seek_index)
+            
+        
+            
         
         return 0
 
