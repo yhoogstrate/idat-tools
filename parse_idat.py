@@ -15,21 +15,21 @@ section_names = {
     102: 'PROBE_IDS',
     103: 'PROBE_STD_DEVS',
     104: 'PROBE_MEAN_INTENSITIES',
-    107: 'PROBE_N_BEADS', #  / rep measurements per probe
+    107: 'PROBE_N_BEADS',
     200: 'MID_BLOCK_ALSO_PROBE_IDS',
     300: 'ARRAY_RUN_INFO',
     400: 'ARRAY_RED_GREEN', # really concerned about this one, always [0]
-    401: 'ARRAY_MOSTLY_NULL', #
-    402: 'BARCODE',
-    403: 'CHIP_TYPE', #  / format
-    404: 'MOSTLY_A', #  / label
-    405: 'UNKNOWN_1', #  / OPA
-    406: 'UNKNOWN_2', #  / SID
-    407: 'UNKNOWN_3', #  / DESCR
-    408: 'UNKNOWN_4', #  / plate ID
-    409: 'UNKNOWN_5', #  / well ID
-    410: 'UNKNOWN_6',
-    510: 'UNKNOWN_7',
+    401: 'ARRAY_MANIFEST',
+    402: 'ARRAY_BARCODE', # e.g. '203927450093'
+    403: 'ARRAY_CHIP_TYPE', # e.g. 'BeadChip 8x5'
+    404: 'ARRAY_CHIP_LABEL', # e.g. 'R01C01'
+    405: 'ARRAY_OLD_STYLE_MANIFEST',
+    406: 'ARRAY_SAMPLE_ID',
+    407: 'ARRAY_DESCRIPTION',
+    408: 'ARRAY_PLATE',
+    409: 'ARRAY_WELL',
+    410: 'ARRAY_UNKNOWN_1', # [1][0][0][0] <- probably int for 1
+    510: 'ARRAY_UNKNOWN_2',
     1000: 'ARRAY_N_PROBES'
 }
 
@@ -41,17 +41,17 @@ section_locations = {
     'MID_BLOCK_ALSO_PROBE_IDS': 200,
     'ARRAY_RUN_INFO': 300,
     'ARRAY_RED_GREEN': 400,
-    'ARRAY_MOSTLY_NULL': 401,
-    'BARCODE': 402,
-    'CHIP_TYPE': 403,
-    'MOSTLY_A': 404,
-    'UNKNOWN_1': 405,
-    'UNKNOWN_2': 406,
-    'UNKNOWN_3': 407,
-    'UNKNOWN_4': 408,
-    'UNKNOWN_5': 409,
-    'UNKNOWN_6': 410,
-    'UNKNOWN_7': 510,
+    'ARRAY_MANIFEST': 401,
+    'ARRAY_BARCODE': 402,
+    'ARRAY_CHIP_TYPE': 403,
+    'ARRAY_CHIP_LABEL': 404,
+    'ARRAY_OLD_STYLE_MANIFEST': 405,
+    'ARRAY_SAMPLE_ID': 406,
+    'ARRAY_DESCRIPTION': 407,
+    'ARRAY_PLATE': 408,
+    'ARRAY_WELL': 409,
+    'ARRAY_UNKNOWN_1': 410,
+    'ARRAY_UNKNOWN_2': 510,
     'ARRAY_N_PROBES': 1000
 }
 
@@ -66,17 +66,17 @@ class IDATdata:
         self.data_n_probes = None
         self.data_sections = {
             'ARRAY_RED_GREEN': None,
-            'ARRAY_MOSTLY_NULL': None,
-            'BARCODE': None,
-            'CHIP_TYPE': None,
-            'MOSTLY_A': None,
-            'UNKNOWN_1': None,
-            'UNKNOWN_6': None,
-            'UNKNOWN_2': None,
-            'UNKNOWN_3': None,
-            'UNKNOWN_4': None,
-            'UNKNOWN_5': None,
-            'UNKNOWN_7': None,
+            'ARRAY_MANIFEST': None,
+            'ARRAY_BARCODE': None,
+            'ARRAY_CHIP_TYPE': None,
+            'ARRAY_CHIP_LABEL': None,
+            'ARRAY_OLD_STYLE_MANIFEST': None,
+            'ARRAY_UNKNOWN_1': None,
+            'ARRAY_SAMPLE_ID': None,
+            'ARRAY_DESCRIPTION': None,
+            'ARRAY_PLATE': None,
+            'ARRAY_WELL': None,
+            'ARRAY_UNKNOWN_2': None,
             'ARRAY_RUN_INFO': None
         }
     
@@ -123,9 +123,14 @@ class IDATfile(IDATdata):
         n_sections = read_int(fh_in)
         
         for i in range(n_sections):
-            print(read_short(fh_in))
-            print(read_long(fh_in))
-            print("")
+            section_type = read_short(fh_in)
+            
+            if section_type not in section_names:
+                raise Exception("Unimplemented section type: "+str(section_type))
+            else:
+                section_type = section_names[section_type]
+            
+            print(section_type, ":", read_long(fh_in))
 
         return section_seek_index
     
@@ -145,9 +150,8 @@ class IDATfile(IDATdata):
         return 0
 
 
-d_red = IDATfile(Path("207513420108_R01C01_Red.idat"))
-d_grn = IDATfile(Path("207513420108_R01C01_Grn.idat"))
-
+d_red = IDATfile(Path("GSM6379997_203927450093_R01C01_Grn.idat"))
+d_grn = IDATfile(Path("GSM6379997_203927450093_R01C01_Red.idat"))
 
 
 
@@ -199,7 +203,7 @@ def get_section_offsets(fh_in):
     return offsets
 
 
-with open(Path("207513420108_R01C01_Red.idat"), "rb") as fh_in:
+with open(Path("GSM6379997_203927450093_R01C01_Grn.idat"), "rb") as fh_in:
     print("1.  Magic:        ["+get_magic(fh_in)+"]")
     print("2.  IDAT version: ["+str(get_idat_version(fh_in))+"]")
     print("3.  section offsets:")
