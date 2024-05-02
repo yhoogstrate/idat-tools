@@ -12,7 +12,7 @@
 from parser import *
 
 
-sections = {
+section_names = {
     102: 'ILLUMINA_ID',
     103: 'STD_DEV',
     104: 'MEAN',
@@ -32,6 +32,28 @@ sections = {
     410: 'UNKNOWN_6',
     510: 'UNKNOWN_7',
     1000: 'NUM_SNPS_READ'
+}
+
+section_locations = {
+    'ILLUMINA_ID': 102,
+    'STD_DEV': 103,
+    'MEAN': 104,
+    'NUM_BEADS': 107,
+    'MID_BLOCK': 200,
+    'RUN_INFO': 300,
+    'RED_GREEN': 400,
+    'MOSTLY_NULL': 401,
+    'BARCODE': 402,
+    'CHIP_TYPE': 403,
+    'MOSTLY_A': 404,
+    'UNKNOWN_1': 405,
+    'UNKNOWN_2': 406,
+    'UNKNOWN_3': 407,
+    'UNKNOWN_4': 408,
+    'UNKNOWN_5': 409,
+    'UNKNOWN_6': 410,
+    'UNKNOWN_7': 510,
+    'NUM_SNPS_READ': 1000
 }
 
 
@@ -66,20 +88,79 @@ def get_section_offsets(fh_in):
     offsets = {}
     for _idx in range(num_fields):
         key = read_short(fh_in)
-        offsets[key] = read_long(fh_in)
+        offsets[read_long(fh_in)] = key
 
     return offsets
 
 
-with open("207513420127_R08C01_Grn.idat", "rb") as fh_in:
+with open("207513420127_R08C01_Red.idat", "rb") as fh_in:
     print("1.  Magic:        ["+get_magic(fh_in)+"]")
     print("2.  IDAT version: ["+str(get_idat_version(fh_in))+"]")
     print("3.  section offsets:")
     
     offsets = get_section_offsets(fh_in)
-    for key in sorted(offsets):
-        if key in sections:
-            print("    " + str(key) + ": " + str(offsets[key]) + "    ("+sections[key]+")")
+    for offset in sorted(offsets):
+        key = offsets[offset]
+        
+        if key in section_names:
+            print("    " + str(key) + ": " + str(offset) + "    ("+section_names[key]+")")
         else:
-            print("    " + str(key) + ": " + str(offsets[key]))
+            print("    " + str(key) + ": " + str(offset))
+        
+        if key == 102:
+            pass # just value parsing
+        elif key == 103:
+            pass # just value parsing
+        elif key == 104:
+            pass # just value parsing
+        elif key == 107:
+            pass # just value parsing
+        elif key == 200:
+            pass # just value parsing
+        elif key == 300:
+            fh_in.seek(offset)
+            for i in range(read_int(fh_in)):
+                print("    => [" + str(read_string(fh_in))+"]")
+            
+        elif key == 400:
+            fh_in.seek(offset)
+            print("    => [" + str(read_int(fh_in))+"]")
+        elif key == 401:
+            fh_in.seek(offset)
+            print("    => [" + str(read_byte(fh_in))+"]")
+        elif key == 402:
+            fh_in.seek(offset)
+            print("    => [" + str(read_string(fh_in))+"]")
+        elif key == 403:
+            fh_in.seek(offset)
+            print("    => [" + str(read_string(fh_in))+"]")
+        elif key == 404:
+            fh_in.seek(offset)
+            print("    => [" + str(read_string(fh_in))+"]")
+        elif key == 405:
+            fh_in.seek(offset)
+            print("    => [" + str(read_byte(fh_in))+"]")
+        elif key == 406:
+            fh_in.seek(offset)
+            print("    => [" + str(read_byte(fh_in))+"]")
+        elif key == 407:
+            fh_in.seek(offset)
+            print("    => [" + str(read_byte(fh_in))+"]")
+        elif key == 408:
+            fh_in.seek(offset)
+            print("    => [" + str(read_byte(fh_in))+"]")
+        elif key == 409:
+            fh_in.seek(offset)
+            print("    => [" + str(read_byte(fh_in))+"]")
+        elif key == 410:
+            fh_in.seek(offset)
+            print("    => [" + str(read_byte(fh_in))+"][" + str(read_byte(fh_in))+"][" + str(read_byte(fh_in))+"][" + str(read_byte(fh_in))+"]")
+        elif key == 510:
+            fh_in.seek(offset)
+            print("    => [" + str(read_byte(fh_in))+"]")
+
+        elif key == 1000:
+            pass # just value parsing
+        else:
+            raise Exception("Key: " + str(key) + " not yet implemented")
 
