@@ -9,7 +9,7 @@ from parser import *
 from beartype import beartype
 import pandas as pd
 from pathlib import Path
-
+from _io import BufferedReader
 
 section_names = {
     102: 'ILLUMINA_ID',
@@ -56,6 +56,8 @@ section_locations = {
 }
 
 
+
+
 class IDATdata:
     def __init__(self):
         self.data_version = None
@@ -78,9 +80,38 @@ class IDATdata:
         }
 
 
+
 class IDATfile(IDATdata):
-    def __init__(self, idat_file: Path):
-        pass
+
+    @beartype
+    def __init__(self, idat_filename: Path):
+        self.idat_filename = idat_filename
+        self.parse()
+    
+    @beartype
+    def parse_magic(self, fh_in: BufferedReader, section_seek_index):
+        print(type(fh_in))
+    
+    @beartype
+    def parse(self) -> int:
+        section_seek_index = {
+            'FILE_MAGIC': 0,
+            'IDAT_VERSION': 4,
+            'SECTION_INDEX_N': 12,
+            'SECTION_INDEX': 16
+        }
+        
+        with open(self.idat_filename, "rb") as fh_in:
+            self.parse_magic(fh_in, section_seek_index)
+        
+        return 0
+
+
+d_red = IDATfile(Path("207513420108_R01C01_Red.idat"))
+d_grn = IDATfile(Path("207513420108_R01C01_Grn.idat"))
+
+
+
 
 
 def get_magic(fh_in):
