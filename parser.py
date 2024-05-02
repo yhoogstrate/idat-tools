@@ -103,3 +103,29 @@ def read_string(infile):
 
     return read_char(infile, num_chars)
 
+def npread(file_like, dtype, n):
+    """Parses a binary file multiple times, allowing for control if the
+    file ends prematurely. This replaces read_results() and runs faster.
+    And it provides support for reading gzipped idat files without decompressing.
+
+    Arguments:
+        infile {file-like} -- The binary file to read the select number of bytes.
+        dtype {data type} -- used within idat files, 2-bit, or 4-bit numbers stored in binary at specific addresses
+        n {number of snps read} -- see files/idat.py for how this function is applied.
+
+    Raises:
+        EOFError: If the end of the file is reached before the number of elements have
+            been processed.
+
+    Returns:
+        A list of the parsed values.
+    """
+    dtype = np.dtype(dtype)
+    # np.readfile is not able to read from gzopene-d file
+    alldata = file_like.read(dtype.itemsize * n)
+    if len(alldata) != dtype.itemsize * n:
+        raise EOFError('End of file reached before number of results parsed')
+    readdata=np.frombuffer(alldata, dtype, n)
+    if readdata.size != n:
+        raise EOFError('End of file reached before number of results parsed')
+    return readdata

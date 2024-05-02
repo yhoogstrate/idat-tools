@@ -1,12 +1,8 @@
 #!/usr/bin/env python
 
-# get sections
 # https://github.com/FoxoTech/methylprep/blob/master/methylprep/files/idat.py#L228
-
-# 1. open file
-
-#get_file_object() -> fh_in
-#open(filepath_or_buffer, 'rb')
+# https://github.com/HenrikBengtsson/illuminaio/blob/develop/R/readIDAT_nonenc.R
+# https://github.com/bioinformed/glu-genetics/blob/dcbbbf67a308d35e157b20a9c76373530510379a/glu/lib/illumina.py#L44-L61
 
 
 from parser import *
@@ -99,6 +95,7 @@ with open("207513420127_R08C01_Red.idat", "rb") as fh_in:
     print("3.  section offsets:")
     
     offsets = get_section_offsets(fh_in)
+    
     for offset in sorted(offsets):
         key = offsets[offset]
         
@@ -115,8 +112,16 @@ with open("207513420127_R08C01_Red.idat", "rb") as fh_in:
             pass # just value parsing
         elif key == 107:
             pass # just value parsing
+            #seek_to_section(IdatSectionCode.NUM_BEADS)
+            #self.n_beads = npread(idat_file, '<u1', self.n_snps_read) # was <u1
+
         elif key == 200:
-            pass # just value parsing
+            midblock = []
+            for i in range(read_int(fh_in)):
+                midblock.append(read_int(fh_in))
+            
+            print("    => len: " + str(len(midblock)) + ",  [" + str(midblock[0]) + ", "+str(midblock[1]) + ", ..., "  + str(midblock[-2]) + ", "+str(midblock[-1]) + "]")
+
         elif key == 300:
             fh_in.seek(offset)
             for i in range(read_int(fh_in)):
@@ -158,9 +163,10 @@ with open("207513420127_R08C01_Red.idat", "rb") as fh_in:
         elif key == 510:
             fh_in.seek(offset)
             print("    => [" + str(read_byte(fh_in))+"]")
-
         elif key == 1000:
-            pass # just value parsing
+            fh_in.seek(offset)
+            print("    => [" + str(read_int(fh_in))+"]")
         else:
             raise Exception("Key: " + str(key) + " not yet implemented")
 
+        
