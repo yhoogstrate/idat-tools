@@ -96,15 +96,6 @@ def get_section_offsets(fh_in):
 
     return offsets
 
-"""
-210 + 
-(1052641*4) +
-(1052641*4)+ 
-(1052641*1) + 
-4 + (1052641*4)  # redundant blokc??
-(4+1+1+12+12+6+1+4+1+1+1+1+1+1+1)
-
-"""
 
 with open("207513420108_R01C01_Grn.idat", "rb") as fh_in:
     print("1.  Magic:        ["+get_magic(fh_in)+"]")
