@@ -12,36 +12,36 @@ from pathlib import Path
 from _io import BufferedReader
 
 section_names = {
-    102: 'ILLUMINA_ID',
-    103: 'STD_DEV',
-    104: 'MEAN',
-    107: 'NUM_BEADS / rep measurements per probe',
-    200: 'MID_BLOCK',
-    300: 'RUN_INFO',
-    400: 'RED_GREEN',
-    401: 'MOSTLY_NULL / manifest',
+    102: 'PROBE_IDS',
+    103: 'PROBE_STD_DEVS',
+    104: 'PROBE_MEAN_INTENSITIES',
+    107: 'PROBE_N_BEADS', #  / rep measurements per probe
+    200: 'MID_BLOCK_ALSO_PROBE_IDS',
+    300: 'ARRAY_RUN_INFO',
+    400: 'ARRAY_RED_GREEN', # really concerned about this one, always [0]
+    401: 'ARRAY_MOSTLY_NULL', #
     402: 'BARCODE',
-    403: 'CHIP_TYPE / format',
-    404: 'MOSTLY_A / label',
-    405: 'UNKNOWN_1 / OPA',
-    406: 'UNKNOWN_2 / SID',
-    407: 'UNKNOWN_3 / DESCR',
-    408: 'UNKNOWN_4 / plate ID',
-    409: 'UNKNOWN_5 / well ID',
+    403: 'CHIP_TYPE', #  / format
+    404: 'MOSTLY_A', #  / label
+    405: 'UNKNOWN_1', #  / OPA
+    406: 'UNKNOWN_2', #  / SID
+    407: 'UNKNOWN_3', #  / DESCR
+    408: 'UNKNOWN_4', #  / plate ID
+    409: 'UNKNOWN_5', #  / well ID
     410: 'UNKNOWN_6',
     510: 'UNKNOWN_7',
-    1000: 'NUM_SNPS_READ'
+    1000: 'ARRAY_N_PROBES'
 }
 
 section_locations = {
-    'ILLUMINA_ID': 102,
-    'STD_DEV': 103,
-    'MEAN': 104,
-    'NUM_BEADS': 107,
-    'MID_BLOCK': 200,
-    'RUN_INFO': 300,
-    'RED_GREEN': 400,
-    'MOSTLY_NULL': 401,
+    'PROBE_IDS': 102,
+    'PROBE_STD_DEVS': 103,
+    'PROBE_MEAN_INTENSITIES': 104,
+    'PROBE_N_BEADS': 107,
+    'MID_BLOCK_ALSO_PROBE_IDS': 200,
+    'ARRAY_RUN_INFO': 300,
+    'ARRAY_RED_GREEN': 400,
+    'ARRAY_MOSTLY_NULL': 401,
     'BARCODE': 402,
     'CHIP_TYPE': 403,
     'MOSTLY_A': 404,
@@ -52,7 +52,7 @@ section_locations = {
     'UNKNOWN_5': 409,
     'UNKNOWN_6': 410,
     'UNKNOWN_7': 510,
-    'NUM_SNPS_READ': 1000
+    'ARRAY_N_PROBES': 1000
 }
 
 
@@ -65,8 +65,8 @@ class IDATdata:
         self.data_section_order = None
         self.data_n_probes = None
         self.data_sections = {
-            'RED_GREEN': None,
-            'MOSTLY_NULL': None,
+            'ARRAY_RED_GREEN': None,
+            'ARRAY_MOSTLY_NULL': None,
             'BARCODE': None,
             'CHIP_TYPE': None,
             'MOSTLY_A': None,
@@ -77,7 +77,7 @@ class IDATdata:
             'UNKNOWN_4': None,
             'UNKNOWN_5': None,
             'UNKNOWN_7': None,
-            'RUN_INFO': None
+            'ARRAY_RUN_INFO': None
         }
     
     @beartype
@@ -123,6 +123,9 @@ class IDATfile(IDATdata):
         n_sections = read_int(fh_in)
         
         for i in range(n_sections):
+            print(read_short(fh_in))
+            print(read_long(fh_in))
+            print("")
 
         return section_seek_index
     
@@ -143,11 +146,6 @@ class IDATfile(IDATdata):
 
 
 d_red = IDATfile(Path("207513420108_R01C01_Red.idat"))
-
-
-import sys
-sys.exit(0)
-
 d_grn = IDATfile(Path("207513420108_R01C01_Grn.idat"))
 
 
@@ -225,7 +223,7 @@ with open(Path("207513420108_R01C01_Red.idat"), "rb") as fh_in:
             pass # just value parsing
         elif key == 107:
             pass # just value parsing
-            #seek_to_section(IdatSectionCode.NUM_BEADS)
+            #seek_to_section(IdatSectionCode.PROBE_N_BEADS)
             #self.n_beads = npread(idat_file, '<u1', self.n_snps_read) # was <u1
 
         elif key == 200:
@@ -286,18 +284,18 @@ with open(Path("207513420108_R01C01_Red.idat"), "rb") as fh_in:
             raise Exception("Key: " + str(key) + " not yet implemented")
 
 
-    offset = [_ for _ in offsets if offsets[_] == section_locations['NUM_SNPS_READ']][0]
+    offset = [_ for _ in offsets if offsets[_] == section_locations['ARRAY_N_PROBES']][0]
     fh_in.seek(offset)
     n_snps_read = read_int(fh_in)
 
-    offset = [_ for _ in offsets if offsets[_] == section_locations['NUM_BEADS']][0]
+    offset = [_ for _ in offsets if offsets[_] == section_locations['PROBE_N_BEADS']][0]
     fh_in.seek(offset)
     n_beads = npread(fh_in, '<u1', n_snps_read) # was <u1
     
     print("5. beads:  " + str(n_beads[0:24]) + "    (n="+str(len(n_beads))+")")
     
     
-    offset = [_ for _ in offsets if offsets[_] == section_locations['ILLUMINA_ID']][0]
+    offset = [_ for _ in offsets if offsets[_] == section_locations['PROBE_IDS']][0]
     fh_in.seek(offset)
     illumn = npread(fh_in, '<i4', n_snps_read) # was <u1
     
@@ -310,14 +308,14 @@ with open(Path("207513420108_R01C01_Red.idat"), "rb") as fh_in:
         raise Exception("discrepancies between identifier blocks")
 
 
-    offset = [_ for _ in offsets if offsets[_] == section_locations['MEAN']][0]
+    offset = [_ for _ in offsets if offsets[_] == section_locations['PROBE_MEAN_INTENSITIES']][0]
     fh_in.seek(offset)
-    mean = npread(fh_in, '<i4', n_snps_read) # was <u1
+    PROBE_MEAN_INTENSITIES = npread(fh_in, '<i4', n_snps_read) # was <u1
     
-    print("7. Means:  " + str(mean[0:7]) + "    (n="+str(len(mean))+")")
+    print("7. PROBE_MEAN_INTENSITIESs:  " + str(PROBE_MEAN_INTENSITIES[0:7]) + "    (n="+str(len(PROBE_MEAN_INTENSITIES))+")")
     
     
-    offset = [_ for _ in offsets if offsets[_] == section_locations['STD_DEV']][0]
+    offset = [_ for _ in offsets if offsets[_] == section_locations['PROBE_STD_DEVS']][0]
     fh_in.seek(offset)
     sd = npread(fh_in, '<i4', n_snps_read) # was <u1
     
@@ -327,7 +325,7 @@ with open(Path("207513420108_R01C01_Red.idat"), "rb") as fh_in:
     df = pd.DataFrame({
                 'probe_id': illumn,
                 'probe_n_beads': n_beads,
-                'probe_mean': mean,
+                'probe_PROBE_MEAN_INTENSITIES': PROBE_MEAN_INTENSITIES,
                 'probe_sd': sd })
     
     print(df)
