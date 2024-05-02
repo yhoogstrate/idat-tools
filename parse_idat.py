@@ -6,7 +6,9 @@
 
 
 from parser import *
+from beartype import beartype
 import pandas as pd
+from pathlib import Path
 
 
 section_names = {
@@ -52,6 +54,33 @@ section_locations = {
     'UNKNOWN_7': 510,
     'NUM_SNPS_READ': 1000
 }
+
+
+class IDATdata:
+    def __init__(self):
+        self.data_version = None
+        self.data_section_order = None
+        self.data_n_probes = None
+        self.data_sections = {
+            'RED_GREEN': None,
+            'MOSTLY_NULL': None,
+            'BARCODE': None,
+            'CHIP_TYPE': None,
+            'MOSTLY_A': None,
+            'UNKNOWN_1': None,
+            'UNKNOWN_6': None,
+            'UNKNOWN_2': None,
+            'UNKNOWN_3': None,
+            'UNKNOWN_4': None,
+            'UNKNOWN_5': None,
+            'UNKNOWN_7': None,
+            'RUN_INFO': None
+        }
+
+
+class IDATfile(IDATdata):
+    def __init__(self, idat_file: Path):
+        pass
 
 
 def get_magic(fh_in):
@@ -101,7 +130,7 @@ def get_section_offsets(fh_in):
     return offsets
 
 
-with open("207513420108_R01C01_Red.idat", "rb") as fh_in:
+with open(Path("207513420108_R01C01_Red.idat"), "rb") as fh_in:
     print("1.  Magic:        ["+get_magic(fh_in)+"]")
     print("2.  IDAT version: ["+str(get_idat_version(fh_in))+"]")
     print("3.  section offsets:")
