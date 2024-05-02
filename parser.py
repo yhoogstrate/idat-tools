@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import numpy as np
 
 def bytes_to_int(input_bytes, signed=False):
     """Returns the integer represented by the given array of bytes.
@@ -104,6 +105,7 @@ def read_string(infile):
     return read_char(infile, num_chars)
 
 def npread(file_like, dtype, n):
+    # https://stackoverflow.com/questions/72838939/how-to-convert-the-string-between-numpy-array-and-bytes
     """Parses a binary file multiple times, allowing for control if the
     file ends prematurely. This replaces read_results() and runs faster.
     And it provides support for reading gzipped idat files without decompressing.
@@ -121,11 +123,24 @@ def npread(file_like, dtype, n):
         A list of the parsed values.
     """
     dtype = np.dtype(dtype)
+    
     # np.readfile is not able to read from gzopene-d file
     alldata = file_like.read(dtype.itemsize * n)
+    
     if len(alldata) != dtype.itemsize * n:
         raise EOFError('End of file reached before number of results parsed')
     readdata=np.frombuffer(alldata, dtype, n)
     if readdata.size != n:
         raise EOFError('End of file reached before number of results parsed')
+    
+    """
+    # cast back and check
+    result_str = np.ndarray.tobytes(readdata) #.decode("utf-8")
+    
+    print("alldata", alldata[1:5])
+    print("results", result_str[1:5])
+    if alldata[1:5] == result_str[1:5]:
+        print("check , same!")
+    """
+    
     return readdata

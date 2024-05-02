@@ -169,4 +169,23 @@ with open("207513420127_R08C01_Red.idat", "rb") as fh_in:
         else:
             raise Exception("Key: " + str(key) + " not yet implemented")
 
-        
+
+    offset = [_ for _ in offsets if offsets[_] == section_locations['NUM_SNPS_READ']][0]
+    fh_in.seek(offset)
+    n_snps_read = read_int(fh_in)
+
+    offset = [_ for _ in offsets if offsets[_] == section_locations['NUM_BEADS']][0]
+    fh_in.seek(offset)
+    n_beads = npread(fh_in, '<u1', n_snps_read) # was <u1
+    
+    print("4. beads:  " + str(n_beads[0:24]) + "    (n="+str(len(n_beads))+")")
+    
+    
+    offset = [_ for _ in offsets if offsets[_] == section_locations['ILLUMINA_ID']][0]
+    fh_in.seek(offset)
+    illumn = npread(fh_in, '<i4', n_snps_read) # was <u1
+    
+    print("5. Illumina:  " + str(illumn[0:8]) + "    (n="+str(len(illumn))+")")
+
+
+
