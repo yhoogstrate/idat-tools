@@ -7,7 +7,7 @@
 
 from parser import *
 from pathlib import Path
-
+import re
 
 from beartype import beartype
 from _io import BufferedReader
@@ -139,13 +139,89 @@ class IDATdata:
         return self.data_per_probe_matrix
 
     @beartype
-    def set_array_red_green(self, red_green: int) -> int:
+    def set_array_red_green(self, array_red_green: int) -> int:
         # checks here
         
-        self.data_array_red_green = red_green
+        self.data_array_red_green = array_red_green
         return self.data_array_red_green
 
-
+    @beartype
+    def set_array_manifest(self, array_manifest: str) -> str:
+        # checks here
+        
+        self.data_array_manifest = array_manifest
+        return self.data_array_manifest
+    
+    @beartype
+    def set_array_barcode(self, array_barcode: str) -> str:
+        #if not re.match(r"^[0-9]+$", array_barcode):
+        #    raise Exception("Incorrect barcode: " + array_barcode)
+        
+        self.data_array_barcode = array_barcode
+        return self.data_array_barcode
+    
+    def set_array_chip_type(self, array_chip_type) -> str:
+        # checks here
+        
+        self.data_array_chip_type = array_chip_type
+        return self.data_array_chip_type
+    
+    def set_array_chip_label(self, array_chip_label) -> str:
+        # checks here
+        
+        self.data_array_chip_label = array_chip_label
+        return self.data_array_chip_label
+    
+    def set_array_old_style_manifest(self, array_old_style_manifest) -> str:
+        # checks here
+        
+        self.data_array_old_style_manifest = array_old_style_manifest
+        return self.data_array_old_style_manifest
+    
+    def set_array_unknown_1(self, array_unknown_1) -> str:
+        # checks here
+        
+        self.data_array_unknown_1 = array_unknown_1
+        return self.data_array_unknown_1
+    
+    def set_array_sample_id(self, array_sample_id) -> str:
+        # checks here
+        
+        self.data_array_sample_id = array_sample_id
+        return self.data_array_sample_id
+    
+    def set_array_description(self, array_description) -> str:
+        # checks here
+        
+        self.data_array_description = array_description
+        return self.data_array_description
+    
+    def set_array_plate(self, array_plate) -> str:
+        # checks here
+        
+        self.data_array_plate = array_plate
+        return self.data_array_plate
+    
+    def set_array_well(self, array_well) -> str:
+        # checks here
+        
+        self.data_array_well = array_well
+        return self.data_array_well
+    
+    def set_array_unknown_2(self, array_unknown_2) -> str:
+        # checks here
+        
+        self.data_array_unknown_2 = array_unknown_2
+        return self.data_array_unknown_2
+    
+    @beartype
+    def set_array_run_info(self, array_run_info: list[tuple[str, str, str, str, str]]) -> list[tuple[str, str, str, str, str]]:
+        # checks here
+        
+        print(array_run_info)
+        
+        self.data_array_run_info = array_run_info
+        return self.data_array_run_info
 
 class IDATfile(IDATdata):
 
@@ -304,6 +380,77 @@ class IDATfile(IDATdata):
         return self.set_array_red_green(red_green)
 
     @beartype
+    def parse_array_manifest(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
+        fh_in.seek(section_seek_index['ARRAY_MANIFEST'])
+        
+        return self.set_array_manifest(read_string(fh_in))
+    
+    @beartype
+    def parse_array_barcode(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
+        fh_in.seek(section_seek_index['ARRAY_BARCODE'])
+        
+        return self.set_array_barcode(read_string(fh_in))
+    
+    def parse_array_chip_type(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
+        fh_in.seek(section_seek_index['ARRAY_CHIP_TYPE'])
+        
+        return self.set_array_chip_type(read_string(fh_in))
+    
+    def parse_array_chip_label(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
+        fh_in.seek(section_seek_index['ARRAY_CHIP_LABEL'])
+        
+        return self.set_array_chip_label(read_string(fh_in))
+    
+    def parse_array_old_style_manifest(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
+        fh_in.seek(section_seek_index['ARRAY_OLD_STYLE_MANIFEST'])
+        
+        return self.set_array_old_style_manifest(read_string(fh_in))
+    
+    def parse_array_unknown_1(self, fh_in: BufferedReader, section_seek_index: dict) -> list[int]:
+        fh_in.seek(section_seek_index['ARRAY_UNKNOWN_1'])
+        
+        return self.set_array_unknown_1([read_byte(fh_in), read_byte(fh_in), read_byte(fh_in), read_byte(fh_in)])
+    
+    def parse_array_sample_id(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
+        fh_in.seek(section_seek_index['ARRAY_SAMPLE_ID'])
+        
+        return self.set_array_sample_id(read_string(fh_in))
+    
+    def parse_array_description(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
+        fh_in.seek(section_seek_index['ARRAY_DESCRIPTION'])
+        
+        return self.set_array_description(read_string(fh_in))
+    
+    def parse_array_plate(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
+        fh_in.seek(section_seek_index['ARRAY_PLATE'])
+        
+        return self.set_array_plate(read_string(fh_in))
+    
+    def parse_array_well(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
+        fh_in.seek(section_seek_index['ARRAY_WELL'])
+        
+        return self.set_array_well(read_string(fh_in))
+    
+    def parse_array_unknown_2(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
+        fh_in.seek(section_seek_index['ARRAY_UNKNOWN_2'])
+        
+        return self.set_array_unknown_2(read_string(fh_in))
+    
+    @beartype
+    def parse_array_run_info(self, fh_in: BufferedReader, section_seek_index: dict) -> list[tuple[str, str, str, str, str]]:
+        fh_in.seek(section_seek_index['ARRAY_RUN_INFO'])
+        
+        run_info = []
+        
+        for i in range(read_int(fh_in)): # blocks containing 5 consequtive strings
+            run_info.append((read_string(fh_in), read_string(fh_in), read_string(fh_in), read_string(fh_in), read_string(fh_in)))
+        
+        print(run_info)
+        
+        return self.set_array_run_info(run_info)
+    
+
+    @beartype
     def parse(self) -> int:
         section_seek_index = { # static entries - todo: make class
             'FILE_MAGIC': 0,
@@ -318,20 +465,18 @@ class IDATfile(IDATdata):
             self.parse_array_n_probes(fh_in, section_seek_index)
             self.parse_data_per_probe_matrix(fh_in, section_seek_index)
             self.parse_array_red_green(fh_in, section_seek_index)
-            
-            #self.parse_array_MANIFEST(fh_in, section_seek_index)
-            #self.parse_array_BARCODE(fh_in, section_seek_index)
-            #self.parse_array_CHIP_TYPE(fh_in, section_seek_index)
-            #self.parse_array_CHIP_LABEL(fh_in, section_seek_index)
-            #self.parse_array_OLD_STYLE_MANIFEST(fh_in, section_seek_index)
-            #self.parse_array_UNKNOWN_1(fh_in, section_seek_index)
-            #self.parse_array_SAMPLE_ID(fh_in, section_seek_index)
-            #self.parse_array_DESCRIPTION(fh_in, section_seek_index)
-            #self.parse_array_PLATE(fh_in, section_seek_index)
-            #self.parse_array_WELL(fh_in, section_seek_index)
-            #self.parse_array_UNKNOWN_2(fh_in, section_seek_index)
-            #self.parse_array_RUN_INFO(fh_in, section_seek_index)
-            
+            self.parse_array_manifest(fh_in, section_seek_index)
+            self.parse_array_barcode(fh_in, section_seek_index)
+            self.parse_array_chip_type(fh_in, section_seek_index)
+            self.parse_array_chip_label(fh_in, section_seek_index)
+            self.parse_array_old_style_manifest(fh_in, section_seek_index)
+            self.parse_array_unknown_1(fh_in, section_seek_index)
+            self.parse_array_sample_id(fh_in, section_seek_index)
+            self.parse_array_description(fh_in, section_seek_index)
+            self.parse_array_plate(fh_in, section_seek_index)
+            self.parse_array_well(fh_in, section_seek_index)
+            self.parse_array_unknown_2(fh_in, section_seek_index)
+            self.parse_array_run_info(fh_in, section_seek_index)
         
         return 0
 
