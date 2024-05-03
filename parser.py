@@ -127,8 +127,9 @@ def read_string(fh_in: BufferedReader) -> str:
     return read_char(fh_in, num_chars)
 
 
+
 @beartype
-def npread(fh_in: BufferedReader, dtype: str, n_elements: int):
+def read_numpy_vector(fh_in: BufferedReader, dtype: str, n_elements: int):
     # https://stackoverflow.com/questions/72838939/how-to-convert-the-string-between-numpy-array-and-bytes
     """Parses a binary file multiple times, allowing for control if the
     file ends prematurely. This replaces read_results() and runs faster.
@@ -155,19 +156,14 @@ def npread(fh_in: BufferedReader, dtype: str, n_elements: int):
     readdata=np.frombuffer(alldata, dtype, n_elements)
     if readdata.size != n_elements:
         raise EOFError('End of file reached before number of results parsed')
-    
-    """
-    # cast back and check
-    result_str = np.ndarray.tobytes(readdata) #.decode("utf-8")
-    
-    print("alldata", alldata[1:5])
-    print("results", result_str[1:5])
-    if alldata[1:5] == result_str[1:5]:
-        print("check , same!")
-    """
-    
+
     return readdata
 
+
+def write_numpy_vector(fh_out: BufferedReader, np_data):
+    out_as_bytes = np.ndarray.tobytes(np_data)
+    
+    return fh_out.write(np_data)
 
 
 @beartype
@@ -201,52 +197,38 @@ def binary_string_len(string: str) -> int:
     """
     
     l = len(string)
-    if l >= 0 and l <= 127:
-        k = 1
-    elif l >= 128 and l <= 16383:
-        k = 2
-    elif l >= 16384 and l <- 2097151:
-        k = 3
+    l_enc = long_to_7bit_string(l)
+    
+    return len(l_enc)
+
+
+
+@beartype
+def long_to_7bit_string(var_sized_integer: int) -> bytearray:
+    out = bytearray(b'')
+    
+    offset = var_sized_integer % 128
+    if var_sized_integer // 128 > 0:
+        out.append(offset + 128)
     else:
-        raise Exception("Probably no real idat file")
+        out.append(offset)
+
+    while var_sized_integer // 128 > 0:
+        var_sized_integer = var_sized_integer // 128
+        offset = var_sized_integer % 128
+
+        if var_sized_integer // 128 > 0:
+            out.append(offset + 128)
+        else:
+            out.append(offset)
     
-    return k + l
+    return out
 
 
-
-def bytes_to_string(byte_list):
-    i = 0
-    
-    byte_list = [ord(_) for _ in byte_list]
-    num_bytes = byte_list[i]
-    num_chars = num_bytes % 128
-    shift = 0
-
-    while num_bytes // 128 == 1:
-        i += 1
-        num_bytes = byte_list[i]
-        shift += 7
-        offset = (num_bytes % 128) * (2 ** shift)
-        num_chars += offset
-
-    return num_chars
 
 @beartype
 def write_string(fh_out: BufferedWriter, out: str):
-    
-    """
-    num_bytes = read_byte(fh_in)
-    num_chars = num_bytes % 128
-    shift = 0
-
-    while num_bytes // 128 == 1:
-        num_bytes = read_byte(fh_in)
-        shift += 7
-        offset = (num_bytes % 128) * (2 ** shift)
-        num_chars += offset
-
-    return read_char(fh_in, num_chars)
-    """
+    return fh_out.write(long_to_7bit_string(len(out)) + str.encode(out))
 
 
 

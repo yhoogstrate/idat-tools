@@ -143,11 +143,6 @@ class IDATdata(object):
             if _ not in section_names.values():
                 raise Exception("Unknown section: "+str(_))
         
-        print()
-        print("idx",self.section_index_order)
-        print("phy",section_physical_order)
-        print()
-        
         self.section_physical_order = section_physical_order
         return self.section_physical_order
 
@@ -319,7 +314,7 @@ class IDATreader:
         if self.data.array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        probe_ids = npread(fh_in, '<u4', self.data.array_n_probes) # layout-check: (4207470- 210) / 1051815 = 4
+        probe_ids = read_numpy_vector(fh_in, '<u4', self.data.array_n_probes) # layout-check: (4207470- 210) / 1051815 = 4
         
         if np.any(probe_ids <= 0):
             raise Exception("Wrong probe id's found")
@@ -336,7 +331,7 @@ class IDATreader:
         if self.data.array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        probe_std_devs = npread(fh_in, '<u2', self.data.array_n_probes) # layout-check: (6311100 - 4207470) / 1051815 = 2
+        probe_std_devs = read_numpy_vector(fh_in, '<u2', self.data.array_n_probes) # layout-check: (6311100 - 4207470) / 1051815 = 2
         
         if np.any(probe_std_devs < 0):
             raise Exception("Wrong std dev found (0 or negative)")
@@ -350,7 +345,7 @@ class IDATreader:
         if self.data.array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        probe_mean_intensities = npread(fh_in, '<u2', self.data.array_n_probes) # layout-check: (8414730 - 6311100) / 1051815 = 2
+        probe_mean_intensities = read_numpy_vector(fh_in, '<u2', self.data.array_n_probes) # layout-check: (8414730 - 6311100) / 1051815 = 2
         
         if np.any(probe_mean_intensities < 0):
             raise Exception("Wrong median probe intensity found (negative)")
@@ -364,7 +359,7 @@ class IDATreader:
         if self.data.array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        probe_n_beads = npread(fh_in, '<u1', self.data.array_n_probes) # layout-check: (9466545 - 8414730) / 1051815 = 1
+        probe_n_beads = read_numpy_vector(fh_in, '<u1', self.data.array_n_probes) # layout-check: (9466545 - 8414730) / 1051815 = 1
         
         if np.any(probe_n_beads < 0):
             raise Exception("Wrong number of beads per probe found (0 or negative)")
@@ -381,7 +376,7 @@ class IDATreader:
         if self.data.array_n_probes != read_int(fh_in):
             raise Exception("Weird discrepancy between number of probes and size of mid block")
         
-        probe_mid_block = npread(fh_in, '<u4', self.data.array_n_probes) # layout-check: (13673809 - (9466545 + 4)) / 1051815 = 4
+        probe_mid_block = read_numpy_vector(fh_in, '<u4', self.data.array_n_probes) # layout-check: (13673809 - (9466545 + 4)) / 1051815 = 4
         
         if np.any(probe_mid_block <= 0):
             raise Exception("Wrong probe id's found")
@@ -556,9 +551,6 @@ class IDATwriter(IDATdata):
             offset += write_long(fh_out, self.data.idat_version)
             offset += write_int(fh_out, len(self.data.section_index_order))
             
-            offset_virtual = offset # should be 16
-            offset_virtual += len(self.data.section_index_order) * (2 + 8)
-            
             section_sizes = {
                 "ARRAY_N_PROBES": 4,
                 "PROBE_IDS": (4 * self.data.array_n_probes),
@@ -580,6 +572,9 @@ class IDATwriter(IDATdata):
                 "ARRAY_WELL": binary_string_len(self.data.array_plate),
                 "ARRAY_UNKNOWN_2": binary_string_len(self.data.array_plate)
             }
+
+            offset_virtual = offset # should be 16
+            offset_virtual += len(self.data.section_index_order) * (2 + 8)
             
             for section in self.data.section_index_order:
                 section_code = [_ for _ in section_names.items() if _[1] == section][0][0]
@@ -587,40 +582,86 @@ class IDATwriter(IDATdata):
                 sections_before = self.data.section_physical_order[0:self.data.section_physical_order.index(section)]
                 sections_before_sizes = [section_sizes[_] for _ in sections_before]
 
-                #print(section, sections_before, sections_before_sizes, sum(sections_before_sizes))
-
                 offset_virtual_section = offset_virtual + sum(sections_before_sizes)
-                    
-
-                print(section_code, "=>", offset_virtual_section)
                 
-                write_short(fh_out, section_code)
-                write_long(fh_out, offset_virtual_section)
-                
-                """
-                elif section == "PROBE_IDS":
-                    offset_virtual += 
-                elif section == "PROBE_STD_DEVS":
-                    offset_virtual += (2 * self.data.array_n_probes)
-                elif section == "PROBE_MEAN_INTENSITIES":
-                    offset_virtual += (2 * self.data.array_n_probes)
-                elif section == "PROBE_N_BEADS":
-                    offset_virtual += (1 * self.data.array_n_probes)
-                elif section == "PROBE_MID_BLOCK":
-                    offset_virtual += 4 + (4 * self.data.array_n_probes)
-                elif section == "ARRAY_RUN_INFO":
-                    offset_virtual += 4 + 
-                    
-                    for i in range(len(self.data.array_run_info)):
-                        for j in range(5):
-                            offset_virtual += binary_string_len(self.data.array_run_info[i][j])
+                offset += write_short(fh_out, section_code)
+                offset += write_long(fh_out, offset_virtual_section)
 
-                elif section == "ARRAY_RED_GREEN":
-                    offset_virtual += 4
-                """
 
+            # @todo for section in self.data.section_physical_order:
+
+            print()
+            print("phy", self.data.section_physical_order)
+            print()
+        
+            print("offset:", offset)
+            offset += write_int(fh_out, self.data.array_n_probes)
+
+            print("offset:", offset)
+            offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_ids"].to_numpy("<u4"))
+
+            print("offset:", offset)
+            offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_std_devs"].to_numpy("<u2"))
+
+            print("offset:", offset)
+            offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_mean_intensities"].to_numpy("<u2"))
+
+            print("offset:", offset)
+            offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_n_beads"].to_numpy("<u1"))
+
+
+            print("offset:", offset)
+            offset += write_int(fh_out, self.data.array_n_probes)
+            offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_mid_block"].to_numpy("<u4"))
+
+            print("offset:", offset)
+            offset += write_int(fh_out, self.data.array_red_green)
             
-            print(offset_virtual)
+            print("offset:", offset)
+            offset += write_string(fh_out, self.data.array_manifest)
+            
+            print("offset:", offset)
+            offset += write_string(fh_out, self.data.array_barcode)
+
+            print("offset:", offset)
+            offset += write_string(fh_out, self.data.array_chip_type)
+            
+            print("offset:", offset)
+            offset += write_string(fh_out, self.data.array_chip_label)
+            
+            print("offset:", offset)
+            offset += write_string(fh_out, self.data.array_old_style_manifest)
+            
+            print("offset:", offset)
+            offset += write_char(fh_out, chr(self.data.array_unknown_1[0]))
+            offset += write_char(fh_out, chr(self.data.array_unknown_1[1]))
+            offset += write_char(fh_out, chr(self.data.array_unknown_1[2]))
+            offset += write_char(fh_out, chr(self.data.array_unknown_1[3]))
+            
+            print("offset:", offset)
+            offset += write_string(fh_out, self.data.array_sample_id)
+
+            print("offset:", offset)
+            offset += write_string(fh_out, self.data.array_description)
+
+            print("offset:", offset)
+            offset += write_string(fh_out, self.data.array_plate)
+
+            print("offset:", offset)
+            offset += write_string(fh_out, self.data.array_well)
+            
+            print("offset:", offset)
+            offset += write_string(fh_out, self.data.array_unknown_2)
+
+            print("offset:", offset)
+            n = len(self.data.array_run_info)
+            offset += write_int(fh_out, n)
+            for i in range(len(self.data.array_run_info)):
+                for j in range(5):
+                    offset += write_string(fh_out, self.data.array_run_info[i][j])
+
+            print("offset:", offset)
+
 
 
 d_red = IDATreader(Path("GSM6379997_203927450093_R01C01_Grn.idat"))
@@ -638,7 +679,6 @@ w.write(Path("test.idat"))
 104 => 6311100
 107 => 8414730
 200 => 9466545         [mid block]
-300 => 13673857        [run_info]
 400 => 13673809
 401 => 13673813
 402 => 13673814
@@ -651,5 +691,7 @@ w.write(Path("test.idat"))
 408 => 13673854
 409 => 13673855
 510 => 13673856
+
+300 => 13673857        [run_info]
 """
 
