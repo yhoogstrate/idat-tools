@@ -159,7 +159,7 @@ class IDATfile(IDATdata):
         if self.data_array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        probe_ids = npread(fh_in, '<u4', self.data_array_n_probes)
+        probe_ids = npread(fh_in, '<u4', self.data_array_n_probes) # layout-check: (4207470- 210) / 1051815 = 4
         
         if np.any(probe_ids <= 0):
             raise Exception("Wrong probe id's found")
@@ -170,18 +170,45 @@ class IDATfile(IDATdata):
         return probe_ids
 
     @beartype
-    def parse_std_devs(self, fh_in: BufferedReader, section_seek_index: dict) -> ndarray:
+    def parse_probe_std_devs(self, fh_in: BufferedReader, section_seek_index: dict) -> ndarray:
         fh_in.seek(section_seek_index['PROBE_STD_DEVS'])
         
         if self.data_array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        std_devs = npread(fh_in, '<u4', self.data_array_n_probes)
+        probe_std_devs = npread(fh_in, '<u2', self.data_array_n_probes) # layout-check: (6311100 - 4207470) / 1051815 = 2
         
-        if np.any(std_devs < 0):
+        if np.any(probe_std_devs < 0):
             raise Exception("Wrong std dev found (0 or negative)")
         
-        return std_devs
+        return probe_std_devs
+
+    @beartype
+    def parse_probe_mean_intensities(self, fh_in: BufferedReader, section_seek_index: dict) -> ndarray:
+        fh_in.seek(section_seek_index['PROBE_MEAN_INTENSITIES'])
+        
+        if self.data_array_n_probes is None:
+            self.parse_array_n_probes(fh_in, section_seek_index)
+        
+        probe_mean_intensities = npread(fh_in, '<u2', self.data_array_n_probes) # layout-check: (8414730 - 6311100) / 1051815 = 2
+        
+        if np.any(probe_mean_intensities < 0):
+            raise Exception("Wrong std dev found (0 or negative)")
+        
+        return probe_mean_intensities
+
+    def parse_probe_n_beads(self, fh_in: BufferedReader, section_seek_index: dict) -> ndarray:
+        fh_in.seek(section_seek_index['PROBE_N_BEADS'])
+        
+        if self.data_array_n_probes is None:
+            self.parse_array_n_probes(fh_in, section_seek_index)
+        
+        probe_n_beads = npread(fh_in, '<u1', self.data_array_n_probes) # layout-check: (9466545 - 8414730) / 1051815 = 1
+        
+        if np.any(probe_n_beads < 0):
+            raise Exception("Wrong std dev found (0 or negative)")
+        
+        return probe_n_beads
 
 
     @beartype
@@ -200,10 +227,15 @@ class IDATfile(IDATdata):
             
             
             probe_ids = self.parse_probe_ids(fh_in, section_seek_index)
+            probe_std_devs = self.parse_probe_std_devs(fh_in, section_seek_index)
+            probe_mean_intensities = self.parse_probe_mean_intensities(fh_in, section_seek_index)
+            probe_n_beads = self.parse_probe_n_beads(fh_in, section_seek_index)
+            
             print(probe_ids)
-            std_devs =  self.parse_std_devs(fh_in, section_seek_index)
-            print(std_devs)
-        
+            print(probe_std_devs)
+            print(probe_mean_intensities)
+            print(probe_n_beads)
+            print()
             
         
         return 0
