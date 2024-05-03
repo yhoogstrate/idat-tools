@@ -74,6 +74,8 @@ class IDATdata:
         self.data_section_order = None
         self.data_array_n_probes = None
         
+        self.data_per_probe_matrix = None
+        
         self.data_array_red_green = None
         self.data_array_manifest = None
         self.data_array_barcode = None
@@ -87,7 +89,7 @@ class IDATdata:
         self.data_array_well = None
         self.data_array_unknown_2 = None
         self.data_array_run_info: None
-        self.data_per_probe = None
+        
     
     @beartype
     def set_file_magic(self, file_magic: str) -> str:
@@ -116,13 +118,31 @@ class IDATdata:
         
         return self.data_array_n_probes
 
+    @beartype
+    def set_section_order(self, section_order: list[str]) -> list[str]:
+        for _ in section_order:
+            if _ not in section_names.values():
+                raise Exception("Unknown section: "+str(_))
+        
+        self.data_section_order = section_order
+        return self.data_section_order
+
+    @beartype
+    def set_data_per_probe_matrix(self, per_probe_matrix: DataFrame) -> DataFrame:
+        if per_probe_matrix.shape[0] != self.data_array_n_probes:
+            raise Exception("Matrix (nrow: "+str(per_probe_matrix.shape[0])+") does no fit size of the array (n="+str(self.data_array_n_probes)+")")
     
+        if not per_probe_matrix['probe_ids'].equals(per_probe_matrix['probe_mid_block']):
+            raise Exception("Discrepance between probe_ids and probe_mid_block")
+
+        self.data_per_probe_matrix = per_probe_matrix
+        return self.data_per_probe_matrix
+
     @beartype
     def set_array_red_green(self, red_green: int) -> int:
         # checks here
         
         self.data_array_red_green = red_green
-
         return self.data_array_red_green
 
 
@@ -150,7 +170,7 @@ class IDATfile(IDATdata):
         
     @beartype
     def parse_section_index(self, fh_in: BufferedReader, section_seek_index: dict) -> dict:
-        self.data_section_order = []
+        section_order = []
         
         fh_in.seek(section_seek_index['SECTION_INDEX_N'])
         n_sections = read_int(fh_in)
@@ -163,9 +183,10 @@ class IDATfile(IDATdata):
             else:
                 section_type = section_names[section_type_int]
             
-            self.data_section_order.append(section_type)
+            section_order.append(section_type)
             section_seek_index[section_type] = read_long(fh_in)
 
+        self.set_section_order(section_order)
         return section_seek_index
     
     @beartype
@@ -255,8 +276,8 @@ class IDATfile(IDATdata):
         return probe_mid_block
 
     @beartype
-    def parse_data_per_probe(self, fh_in: BufferedReader, section_seek_index: dict) -> DataFrame:
-        data_per_probe = pd.DataFrame({
+    def parse_data_per_probe_matrix(self, fh_in: BufferedReader, section_seek_index: dict) -> DataFrame:
+        data_per_probe_matrix = pd.DataFrame({
             'probe_ids': self.parse_probe_ids(fh_in, section_seek_index),
             'probe_std_devs': self.parse_probe_std_devs(fh_in, section_seek_index),
             'probe_mean_intensities': self.parse_probe_mean_intensities(fh_in, section_seek_index),
@@ -264,12 +285,12 @@ class IDATfile(IDATdata):
             'probe_mid_block': self.parse_probe_mid_block(fh_in, section_seek_index)
             })
 
-        if not data_per_probe['probe_ids'].equals(data_per_probe['probe_mid_block']):
+        if not data_per_probe_matrix['probe_ids'].equals(data_per_probe_matrix['probe_mid_block']):
             raise Exception("Discrepance between probe_ids and probe_mid_block")
 
-        self.data_per_probe = data_per_probe
+        self.data_per_probe_matrix = data_per_probe_matrix
 
-        return data_per_probe
+        return self.set_data_per_probe_matrix(data_per_probe_matrix)
 
     @beartype
     def parse_array_red_green(self, fh_in: BufferedReader, section_seek_index: dict) -> int:
@@ -295,7 +316,7 @@ class IDATfile(IDATdata):
             self.parse_idat_version(fh_in, section_seek_index)
             self.parse_section_index(fh_in, section_seek_index)
             self.parse_array_n_probes(fh_in, section_seek_index)
-            self.parse_data_per_probe(fh_in, section_seek_index)
+            self.parse_data_per_probe_matrix(fh_in, section_seek_index)
             self.parse_array_red_green(fh_in, section_seek_index)
             
             #self.parse_array_MANIFEST(fh_in, section_seek_index)
