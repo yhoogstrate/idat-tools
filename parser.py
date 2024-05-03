@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 
+import math
 import numpy as np
+
 
 from beartype import beartype
 from _io import BufferedReader
@@ -184,18 +186,47 @@ def write_int(fh_out: BufferedWriter, out: int) -> int:
 def write_long(fh_out: BufferedWriter, out: int) -> int:
     return fh_out.write(int_to_bytes(out, 8))
 
-
+@beartype
+def binary_string_len(string: str) -> int:
+    l = len(string)
+    k = math.floor(l ** (1/7))
+    
+    print(k, l)
+    
+    return k + l
 
 @beartype
-def write_string(fh_out: BufferedWriter, output: str):
+def string_to_bytes(out):
+    return chr(129) + "A"
+
+
+def bytes_to_string(byte_list):
+    i = 0
     
-    """
-    num_bytes = read_byte(fh_in: BufferedReader)
+    byte_list = [ord(_) for _ in byte_list]
+    num_bytes = byte_list[i]
     num_chars = num_bytes % 128
     shift = 0
 
     while num_bytes // 128 == 1:
-        num_bytes = read_byte(fh_in: BufferedReader)
+        i += 1
+        num_bytes = byte_list[i]
+        shift += 7
+        offset = (num_bytes % 128) * (2 ** shift)
+        num_chars += offset
+
+    return num_chars
+
+@beartype
+def write_string(fh_out: BufferedWriter, out: str):
+    
+    """
+    num_bytes = read_byte(fh_in)
+    num_chars = num_bytes % 128
+    shift = 0
+
+    while num_bytes // 128 == 1:
+        num_bytes = read_byte(fh_in)
         shift += 7
         offset = (num_bytes % 128) * (2 ** shift)
         num_chars += offset

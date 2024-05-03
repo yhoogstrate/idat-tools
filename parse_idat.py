@@ -558,6 +558,15 @@ class IDATwriter(IDATdata):
                     offset_virtual += (1 * self.data.array_n_probes)
                 elif section == "PROBE_MID_BLOCK":
                     offset_virtual += 4 + (4 * self.data.array_n_probes)
+                elif section == "ARRAY_RUN_INFO":
+                    offset_virtual += 4
+                    
+                    for i in range(len(self.data.array_run_info)):
+                        for j in range(5):
+                            offset_virtual += binary_string_len(self.data.array_run_info[i][j])
+
+                elif section == "ARRAY_RED_GREEN":
+                    offset_virtual += 4
                 else:
                     raise Exception("Section type not implemented:" + str(section))
             
