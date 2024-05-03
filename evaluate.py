@@ -7,4 +7,4 @@ with open("GSM6379997_203927450093_R01C01_Grn.idat", "rb") as fh_1:
             c2 = fh_2.read(1)
             
             if c1 != c2:
-                print("!! "+str(i))
+                print("!! "+str(i) + "  " + str(c1) + " <> " + str(c2))
