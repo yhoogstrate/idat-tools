@@ -172,6 +172,13 @@ def npread(fh_in: BufferedReader, dtype: str, n_elements: int):
 def write_char(fh_out: BufferedWriter, out: str) -> int:
     return fh_out.write(str.encode(out))
 
+@beartype
+def write_short(fh_out: BufferedWriter, out: int) -> int:
+    return fh_out.write(int_to_bytes(out, 2))
+
+@beartype
+def write_int(fh_out: BufferedWriter, out: int) -> int:
+    return fh_out.write(int_to_bytes(out, 4))
 
 @beartype
 def write_long(fh_out: BufferedWriter, out: int) -> int:
