@@ -50,11 +50,10 @@ class IDATdata(object):
     def __init__(self):
         self.file_magic = None
         self.idat_version = None
-        self.section_order = None
+        self.section_index_order = None # the order of sections in index is typically different from implementation in the body
+        self.section_physical_order = None        
         self.array_n_probes = None
-        
         self.per_probe_matrix = None
-        
         self.array_red_green = None
         self.array_manifest = None
         self.array_barcode = None
@@ -130,13 +129,27 @@ class IDATdata(object):
         return self.array_n_probes
 
     @beartype
-    def set_section_order(self, section_order: list[str]) -> list[str]:
-        for _ in section_order:
+    def set_section_index_order(self, section_index_order: list[str]) -> list[str]:
+        for _ in section_index_order:
             if _ not in section_names.values():
                 raise Exception("Unknown section: "+str(_))
         
-        self.section_order = section_order
-        return self.section_order
+        self.section_index_order = section_index_order
+        return self.section_index_order
+
+    @beartype
+    def set_section_physical_order(self, section_physical_order: list[str]) -> list[str]:
+        for _ in section_physical_order:
+            if _ not in section_names.values():
+                raise Exception("Unknown section: "+str(_))
+        
+        print()
+        print("idx",self.section_index_order)
+        print("phy",section_physical_order)
+        print()
+        
+        self.section_physical_order = section_physical_order
+        return self.section_physical_order
 
     @beartype
     def set_per_probe_matrix(self, per_probe_matrix: DataFrame) -> DataFrame:
@@ -268,23 +281,28 @@ class IDATreader:
         
     @beartype
     def parse_section_index(self, fh_in: BufferedReader, section_seek_index: dict) -> dict:
-        section_order = []
+        section_index_order = []
+        section_physical_order = {}
         
         fh_in.seek(section_seek_index['SECTION_INDEX_N'])
         n_sections = read_int(fh_in)
         
         for i in range(n_sections):
             section_type_int = read_short(fh_in)
+            section_file_offset = read_long(fh_in)
             
             if section_type_int not in section_names:
                 raise Exception("Unimplemented section type: "+str(section_type_int))
             else:
                 section_type = section_names[section_type_int]
             
-            section_order.append(section_type)
-            section_seek_index[section_type] = read_long(fh_in)
+            section_index_order.append(section_type)
+            section_physical_order[section_file_offset] = section_type
+            section_seek_index[section_type] = section_file_offset
 
-        self.data.set_section_order(section_order)
+        self.data.set_section_index_order(section_index_order)
+        self.data.set_section_physical_order([section_physical_order[_] for _ in sorted(section_physical_order.keys())])
+
         return section_seek_index
     
     @beartype
@@ -536,21 +554,52 @@ class IDATwriter(IDATdata):
         with open(idat_filename, 'wb') as fh_out:
             offset += write_char(fh_out, self.data.file_magic)
             offset += write_long(fh_out, self.data.idat_version)
-            offset += write_int(fh_out, len(self.data.section_order))
+            offset += write_int(fh_out, len(self.data.section_index_order))
             
             offset_virtual = offset # should be 16
-            offset_virtual += len(self.data.section_order) * (2 + 8)
+            offset_virtual += len(self.data.section_index_order) * (2 + 8)
             
-            for section in self.data.section_order:
+            section_sizes = {
+                "ARRAY_N_PROBES": 4,
+                "PROBE_IDS": (4 * self.data.array_n_probes),
+                "PROBE_STD_DEVS": (2 * self.data.array_n_probes),
+                "PROBE_MEAN_INTENSITIES": (2 * self.data.array_n_probes),
+                "PROBE_N_BEADS": (1 * self.data.array_n_probes),
+                "PROBE_MID_BLOCK": 4 + (4 * self.data.array_n_probes),
+                "ARRAY_RUN_INFO": 4 + sum([ sum([binary_string_len(_) for _ in __ ]) for __ in self.data.array_run_info]),
+                "ARRAY_RED_GREEN": 4,
+                "ARRAY_MANIFEST": binary_string_len(self.data.array_manifest),
+                "ARRAY_BARCODE": binary_string_len(self.data.array_barcode),
+                "ARRAY_CHIP_TYPE": binary_string_len(self.data.array_chip_type),
+                "ARRAY_CHIP_LABEL": binary_string_len(self.data.array_chip_label),
+                "ARRAY_OLD_STYLE_MANIFEST": binary_string_len(self.data.array_old_style_manifest),
+                "ARRAY_UNKNOWN_1": 1 + 1 + 1 + 1,
+                "ARRAY_SAMPLE_ID": binary_string_len(self.data.array_sample_id),
+                "ARRAY_DESCRIPTION": binary_string_len(self.data.array_sample_id),
+                "ARRAY_PLATE": binary_string_len(self.data.array_plate),
+                "ARRAY_WELL": binary_string_len(self.data.array_plate),
+                "ARRAY_UNKNOWN_2": binary_string_len(self.data.array_plate)
+            }
+            
+            for section in self.data.section_index_order:
                 section_code = [_ for _ in section_names.items() if _[1] == section][0][0]
-                print(section_code , "=>", offset_virtual)
-                write_short(fh_out, section_code)
-                write_long(fh_out, offset_virtual)
                 
-                if section == "ARRAY_N_PROBES":
-                    offset_virtual += 4
+                sections_before = self.data.section_physical_order[0:self.data.section_physical_order.index(section)]
+                sections_before_sizes = [section_sizes[_] for _ in sections_before]
+
+                #print(section, sections_before, sections_before_sizes, sum(sections_before_sizes))
+
+                offset_virtual_section = offset_virtual + sum(sections_before_sizes)
+                    
+
+                print(section_code, "=>", offset_virtual_section)
+                
+                write_short(fh_out, section_code)
+                write_long(fh_out, offset_virtual_section)
+                
+                """
                 elif section == "PROBE_IDS":
-                    offset_virtual += (4 * self.data.array_n_probes)
+                    offset_virtual += 
                 elif section == "PROBE_STD_DEVS":
                     offset_virtual += (2 * self.data.array_n_probes)
                 elif section == "PROBE_MEAN_INTENSITIES":
@@ -560,7 +609,7 @@ class IDATwriter(IDATdata):
                 elif section == "PROBE_MID_BLOCK":
                     offset_virtual += 4 + (4 * self.data.array_n_probes)
                 elif section == "ARRAY_RUN_INFO":
-                    offset_virtual += 4
+                    offset_virtual += 4 + 
                     
                     for i in range(len(self.data.array_run_info)):
                         for j in range(5):
@@ -568,8 +617,8 @@ class IDATwriter(IDATdata):
 
                 elif section == "ARRAY_RED_GREEN":
                     offset_virtual += 4
-                else:
-                    raise Exception("Section type not implemented:" + str(section))
+                """
+
             
             print(offset_virtual)
 

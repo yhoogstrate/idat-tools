@@ -188,10 +188,27 @@ def write_long(fh_out: BufferedWriter, out: int) -> int:
 
 @beartype
 def binary_string_len(string: str) -> int:
-    l = len(string)
-    k = math.floor(l ** (1/7))
+    """
+    0 ->     1 + 0
+    1 ->     1  + 1
+    127 ->   1 + 127
     
-    #print(k, l)
+    128 ->   2 + 128
+    16383 -> 2 + 16383
+    
+    16384 -> 3 + 16384
+    ...
+    """
+    
+    l = len(string)
+    if l >= 0 and l <= 127:
+        k = 1
+    elif l >= 128 and l <= 16383:
+        k = 2
+    elif l >= 16384 and l <- 2097151:
+        k = 3
+    else:
+        raise Exception("Probably no real idat file")
     
     return k + l
 
