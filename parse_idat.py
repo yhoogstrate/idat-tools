@@ -527,6 +527,7 @@ class IDATwriter(IDATdata):
     def write(self, idat_filename: Path):
         with open(idat_filename, 'wb') as fh_out:
             write_char(fh_out, self.data.data_file_magic)
+            write_long(fh_out, self.data.data_idat_version)
 
 
 

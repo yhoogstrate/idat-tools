@@ -9,7 +9,7 @@ from _io import BufferedWriter
 
 
 @beartype
-def bytes_to_int(input_bytes, signed:bool=False) -> int:
+def bytes_to_int(input_bytes: bytes, signed:bool=False) -> int:
     """Returns the integer represented by the given array of bytes.
     Pre-sets the byteorder to be little-endian.
 
@@ -26,6 +26,14 @@ def bytes_to_int(input_bytes, signed:bool=False) -> int:
         [integer] -- Integer value converted from the supplied bytes.
     """
     return int.from_bytes(input_bytes, byteorder='little', signed=signed)
+
+
+@beartype
+def int_to_bytes(value: int, length: int) -> bytes:
+    if length not in [1,2,4,8]:
+        raise Exception("Should not happen")
+    
+    return value.to_bytes(length, 'little')
 
 
 @beartype
@@ -161,8 +169,14 @@ def npread(fh_in: BufferedReader, dtype: str, n_elements: int):
 
 
 @beartype
-def write_char(fh_out: BufferedWriter, output: str):
-    return fh_out.write(str.encode(output))
+def write_char(fh_out: BufferedWriter, out: str) -> int:
+    return fh_out.write(str.encode(out))
+
+
+@beartype
+def write_long(fh_out: BufferedWriter, out: int) -> int:
+    return fh_out.write(int_to_bytes(out, 8))
+
 
 
 @beartype
