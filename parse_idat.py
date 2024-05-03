@@ -6,19 +6,26 @@
 
 
 from parser import *
-from beartype import beartype
-import pandas as pd
-from numpy import ndarray
-import numpy as np
 from pathlib import Path
+
+
+from beartype import beartype
 from _io import BufferedReader
+
+import numpy as np
+from numpy import ndarray
+
+import pandas as pd
+from pandas import DataFrame
+
+
 
 section_names = {
     102: 'PROBE_IDS',
     103: 'PROBE_STD_DEVS',
     104: 'PROBE_MEAN_INTENSITIES',
     107: 'PROBE_N_BEADS',
-    200: 'MID_BLOCK_ALSO_PROBE_IDS',
+    200: 'PROBE_MID_BLOCK', # also contains the probe_id's for some reason?
     300: 'ARRAY_RUN_INFO',
     400: 'ARRAY_RED_GREEN', # really concerned about this one, always [0]
     401: 'ARRAY_MANIFEST',
@@ -40,7 +47,7 @@ section_locations = {
     'PROBE_STD_DEVS': 103,
     'PROBE_MEAN_INTENSITIES': 104,
     'PROBE_N_BEADS': 107,
-    'MID_BLOCK_ALSO_PROBE_IDS': 200,
+    'PROBE_MID_BLOCK': 200,
     'ARRAY_RUN_INFO': 300,
     'ARRAY_RED_GREEN': 400,
     'ARRAY_MANIFEST': 401,
@@ -66,35 +73,57 @@ class IDATdata:
         self.data_idat_version = None
         self.data_section_order = None
         self.data_array_n_probes = None
-        self.data_sections = {
-            'ARRAY_RED_GREEN': None,
-            'ARRAY_MANIFEST': None,
-            'ARRAY_BARCODE': None,
-            'ARRAY_CHIP_TYPE': None,
-            'ARRAY_CHIP_LABEL': None,
-            'ARRAY_OLD_STYLE_MANIFEST': None,
-            'ARRAY_UNKNOWN_1': None,
-            'ARRAY_SAMPLE_ID': None,
-            'ARRAY_DESCRIPTION': None,
-            'ARRAY_PLATE': None,
-            'ARRAY_WELL': None,
-            'ARRAY_UNKNOWN_2': None,
-            'ARRAY_RUN_INFO': None
-        }
+        
+        self.data_array_red_green = None
+        self.data_array_manifest = None
+        self.data_array_barcode = None
+        self.data_array_chip_type = None
+        self.data_array_chip_label = None
+        self.data_array_old_style_manifest = None
+        self.data_array_unknown_1 = None
+        self.data_array_sample_id = None
+        self.data_array_description = None
+        self.data_array_plate = None
+        self.data_array_well = None
+        self.data_array_unknown_2 = None
+        self.data_array_run_info: None
+        self.data_per_probe = None
     
     @beartype
-    def set_file_magic(self, file_magic: str) -> None:
+    def set_file_magic(self, file_magic: str) -> str:
         if file_magic != "IDAT":
             raise Exception("Invalid file format")
         else:
             self.data_file_magic = file_magic
+        
+        return self.data_file_magic
     
     @beartype
-    def set_idat_version(self, idat_version: int) -> None:
+    def set_idat_version(self, idat_version: int) -> int:
         if idat_version != 3:
             raise Exception("Only tested with idat version 3")
         else:
             self.data_idat_version = idat_version
+        
+        return self.data_idat_version
+    
+    @beartype
+    def set_array_n_probes(self, array_n_probes: int) -> int:
+        if array_n_probes <= 0:
+            raise Exception("Invalid number of probes: " + str(array_n_probes))
+        else:
+            self.data_array_n_probes = array_n_probes
+        
+        return self.data_array_n_probes
+
+    
+    @beartype
+    def set_array_red_green(self, red_green: int) -> int:
+        # checks here
+        
+        self.data_array_red_green = red_green
+
+        return self.data_array_red_green
 
 
 
@@ -102,22 +131,22 @@ class IDATfile(IDATdata):
 
     @beartype
     def __init__(self, idat_filename: Path):
+        IDATdata.__init__(self)
+        
         self.idat_filename = idat_filename
         self.parse()
     
     @beartype
-    def parse_file_magic(self, fh_in: BufferedReader, section_seek_index: dict) -> None:
+    def parse_file_magic(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
         fh_in.seek(section_seek_index['FILE_MAGIC'])
-        self.set_file_magic(read_char(fh_in, 4))
+        
+        return self.set_file_magic(read_char(fh_in, 4))
     
     @beartype
     def parse_idat_version(self, fh_in: BufferedReader, section_seek_index: dict) -> int:
         fh_in.seek(section_seek_index['IDAT_VERSION'])
-        idat_version = read_long(fh_in)
         
-        self.set_idat_version(idat_version)
-        
-        return idat_version
+        return self.set_idat_version(read_long(fh_in))
         
     @beartype
     def parse_section_index(self, fh_in: BufferedReader, section_seek_index: dict) -> dict:
@@ -142,14 +171,8 @@ class IDATfile(IDATdata):
     @beartype
     def parse_array_n_probes(self, fh_in: BufferedReader, section_seek_index: dict) -> int:
         fh_in.seek(section_seek_index['ARRAY_N_PROBES'])
-        array_n_probes = read_int(fh_in)
         
-        if array_n_probes <= 0:
-            raise Exception("Invalid number of probes: " + str(array_n_probes))
-        else:
-            self.data_array_n_probes = array_n_probes
-        
-        return array_n_probes
+        return self.set_array_n_probes(read_int(fh_in))
 
 
     @beartype
@@ -193,10 +216,11 @@ class IDATfile(IDATdata):
         probe_mean_intensities = npread(fh_in, '<u2', self.data_array_n_probes) # layout-check: (8414730 - 6311100) / 1051815 = 2
         
         if np.any(probe_mean_intensities < 0):
-            raise Exception("Wrong std dev found (0 or negative)")
+            raise Exception("Wrong median probe intensity found (negative)")
         
         return probe_mean_intensities
 
+    @beartype
     def parse_probe_n_beads(self, fh_in: BufferedReader, section_seek_index: dict) -> ndarray:
         fh_in.seek(section_seek_index['PROBE_N_BEADS'])
         
@@ -206,10 +230,57 @@ class IDATfile(IDATdata):
         probe_n_beads = npread(fh_in, '<u1', self.data_array_n_probes) # layout-check: (9466545 - 8414730) / 1051815 = 1
         
         if np.any(probe_n_beads < 0):
-            raise Exception("Wrong std dev found (0 or negative)")
+            raise Exception("Wrong number of beads per probe found (0 or negative)")
         
         return probe_n_beads
 
+    @beartype
+    def parse_probe_mid_block(self, fh_in: BufferedReader, section_seek_index: dict) -> ndarray:
+        fh_in.seek(section_seek_index['PROBE_MID_BLOCK'])
+        
+        if self.data_array_n_probes is None:
+            self.parse_array_n_probes(fh_in, section_seek_index)
+        
+        if self.data_array_n_probes != read_int(fh_in):
+            raise Exception("Weird discrepancy between number of probes and size of mid block")
+        
+        probe_mid_block = npread(fh_in, '<u4', self.data_array_n_probes) # layout-check: (13673809 - (9466545 + 4)) / 1051815 = 4
+        
+        if np.any(probe_mid_block <= 0):
+            raise Exception("Wrong probe id's found")
+        
+        if np.any((probe_mid_block[1:] - probe_mid_block[:-1]) <= 0):
+            raise Exception("probe id's are not unique or not incremental")
+        
+        return probe_mid_block
+
+    @beartype
+    def parse_data_per_probe(self, fh_in: BufferedReader, section_seek_index: dict) -> DataFrame:
+        data_per_probe = pd.DataFrame({
+            'probe_ids': self.parse_probe_ids(fh_in, section_seek_index),
+            'probe_std_devs': self.parse_probe_std_devs(fh_in, section_seek_index),
+            'probe_mean_intensities': self.parse_probe_mean_intensities(fh_in, section_seek_index),
+            'probe_n_beads': self.parse_probe_n_beads(fh_in, section_seek_index),
+            'probe_mid_block': self.parse_probe_mid_block(fh_in, section_seek_index)
+            })
+
+        if not data_per_probe['probe_ids'].equals(data_per_probe['probe_mid_block']):
+            raise Exception("Discrepance between probe_ids and probe_mid_block")
+
+        self.data_per_probe = data_per_probe
+
+        return data_per_probe
+
+    @beartype
+    def parse_array_red_green(self, fh_in: BufferedReader, section_seek_index: dict) -> int:
+        fh_in.seek(section_seek_index['ARRAY_RED_GREEN'])
+        
+        red_green = read_int(fh_in)
+        
+        #if red_green != 0:
+        #    raise Exception("Only seen 0 so far, but probably good...")
+        
+        return self.set_array_red_green(red_green)
 
     @beartype
     def parse(self) -> int:
@@ -224,18 +295,21 @@ class IDATfile(IDATdata):
             self.parse_idat_version(fh_in, section_seek_index)
             self.parse_section_index(fh_in, section_seek_index)
             self.parse_array_n_probes(fh_in, section_seek_index)
+            self.parse_data_per_probe(fh_in, section_seek_index)
+            self.parse_array_red_green(fh_in, section_seek_index)
             
-            
-            probe_ids = self.parse_probe_ids(fh_in, section_seek_index)
-            probe_std_devs = self.parse_probe_std_devs(fh_in, section_seek_index)
-            probe_mean_intensities = self.parse_probe_mean_intensities(fh_in, section_seek_index)
-            probe_n_beads = self.parse_probe_n_beads(fh_in, section_seek_index)
-            
-            print(probe_ids)
-            print(probe_std_devs)
-            print(probe_mean_intensities)
-            print(probe_n_beads)
-            print()
+            #self.parse_array_MANIFEST(fh_in, section_seek_index)
+            #self.parse_array_BARCODE(fh_in, section_seek_index)
+            #self.parse_array_CHIP_TYPE(fh_in, section_seek_index)
+            #self.parse_array_CHIP_LABEL(fh_in, section_seek_index)
+            #self.parse_array_OLD_STYLE_MANIFEST(fh_in, section_seek_index)
+            #self.parse_array_UNKNOWN_1(fh_in, section_seek_index)
+            #self.parse_array_SAMPLE_ID(fh_in, section_seek_index)
+            #self.parse_array_DESCRIPTION(fh_in, section_seek_index)
+            #self.parse_array_PLATE(fh_in, section_seek_index)
+            #self.parse_array_WELL(fh_in, section_seek_index)
+            #self.parse_array_UNKNOWN_2(fh_in, section_seek_index)
+            #self.parse_array_RUN_INFO(fh_in, section_seek_index)
             
         
         return 0
