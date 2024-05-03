@@ -191,13 +191,10 @@ def binary_string_len(string: str) -> int:
     l = len(string)
     k = math.floor(l ** (1/7))
     
-    print(k, l)
+    #print(k, l)
     
     return k + l
 
-@beartype
-def string_to_bytes(out):
-    return chr(129) + "A"
 
 
 def bytes_to_string(byte_list):

@@ -543,6 +543,7 @@ class IDATwriter(IDATdata):
             
             for section in self.data.section_order:
                 section_code = [_ for _ in section_names.items() if _[1] == section][0][0]
+                print(section_code , "=>", offset_virtual)
                 write_short(fh_out, section_code)
                 write_long(fh_out, offset_virtual)
                 
@@ -581,5 +582,25 @@ w.write(Path("test.idat"))
 #d_grn = IDATreader(Path("GSM6379997_203927450093_R01C01_Red.idat"))
 
 
-
+"""
+1000 => 206
+102 => 210
+103 => 4207470
+104 => 6311100
+107 => 8414730
+200 => 9466545         [mid block]
+300 => 13673857        [run_info]
+400 => 13673809
+401 => 13673813
+402 => 13673814
+403 => 13673827
+404 => 13673840
+405 => 13673847
+410 => 13673848
+406 => 13673852
+407 => 13673853
+408 => 13673854
+409 => 13673855
+510 => 13673856
+"""
 
