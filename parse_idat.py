@@ -37,7 +37,7 @@ section_names = {
     407: 'ARRAY_DESCRIPTION',
     408: 'ARRAY_PLATE',
     409: 'ARRAY_WELL',
-    410: 'ARRAY_UNKNOWN_1', # [1][0][0][0] <- probably int for 1
+    410: 'ARRAY_UNKNOWN_1', # [1][0][0][0] <- could be int for 1, could be byte set, tuple of bytes is safest and easier to track new values down
     510: 'ARRAY_UNKNOWN_2',
     1000: 'ARRAY_N_PROBES'
 }
@@ -89,7 +89,39 @@ class IDATdata:
         self.data_array_well = None
         self.data_array_unknown_2 = None
         self.data_array_run_info: None
+    
+    def __str__(self):
+        out = ""
         
+        out += "# manifest:             '" + str(self.data_array_manifest) + "'\n"
+        out += "# manifest (old style): '" + str(self.data_array_old_style_manifest) + "'\n"
+        out += "# unknown #1:           [" + "][".join([str(_) for _ in self.data_array_unknown_1]) + "]\n"
+        out += "# sample id:            '" + str(self.data_array_sample_id) + "'\n"
+        out += "# description:          '" + str(self.data_array_description) + "'\n"
+        out += "# plate:                '" + str(self.data_array_plate) + "'\n"
+        out += "# well:                 '" + str(self.data_array_well) + "'\n"
+        out += "# unknown #2:           '" + str(self.data_array_unknown_2) + "'\n"
+        out += "# run info:\n"
+        for i in range(len(self.data_array_run_info)):
+            out += "# "+str(i+1)+". [" + "] [".join([str(_) for _ in self.data_array_run_info[i]]) + "]\n"
+
+        out += "\n"
+        out += self.data_file_magic 
+        out += " v"
+        out += str(self.data_idat_version)
+        out += ": "
+        out += self.data_array_barcode
+        out += "_"
+        out += self.data_array_chip_label
+        out += " (R/G: "
+        out += str(self.data_array_red_green)
+        out += ", "
+        out += self.data_array_chip_type
+        out += ")"
+        out += "\n"
+        out += str(self.data_per_probe_matrix)
+
+        return out
     
     @beartype
     def set_file_magic(self, file_magic: str) -> str:
@@ -154,61 +186,72 @@ class IDATdata:
     
     @beartype
     def set_array_barcode(self, array_barcode: str) -> str:
-        #if not re.match(r"^[0-9]+$", array_barcode):
-        #    raise Exception("Incorrect barcode: " + array_barcode)
+        if not re.match(r"^[0-9]+$", array_barcode):
+            raise Exception("Incorrect barcode: " + array_barcode)
         
         self.data_array_barcode = array_barcode
         return self.data_array_barcode
     
-    def set_array_chip_type(self, array_chip_type) -> str:
-        # checks here
+    @beartype
+    def set_array_chip_type(self, array_chip_type: str) -> str:
+        if array_chip_type != "BeadChip 8x5":
+            raise Exception("This tool is not tested with other chip types than BeadChip 8x5")
         
         self.data_array_chip_type = array_chip_type
         return self.data_array_chip_type
     
-    def set_array_chip_label(self, array_chip_label) -> str:
-        # checks here
+    @beartype
+    def set_array_chip_label(self, array_chip_label: str) -> str:
+        if not re.match(r"^R[0-9]+C[0-9]+$", array_chip_label):
+            raise Exception("Odd label: " + array_chip_label)
         
         self.data_array_chip_label = array_chip_label
         return self.data_array_chip_label
     
-    def set_array_old_style_manifest(self, array_old_style_manifest) -> str:
+    @beartype
+    def set_array_old_style_manifest(self, array_old_style_manifest: str) -> str:
         # checks here
         
         self.data_array_old_style_manifest = array_old_style_manifest
         return self.data_array_old_style_manifest
     
-    def set_array_unknown_1(self, array_unknown_1) -> str:
+    @beartype
+    def set_array_unknown_1(self, array_unknown_1: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
         # checks here
         
         self.data_array_unknown_1 = array_unknown_1
         return self.data_array_unknown_1
     
-    def set_array_sample_id(self, array_sample_id) -> str:
+    @beartype
+    def set_array_sample_id(self, array_sample_id: str) -> str:
         # checks here
         
         self.data_array_sample_id = array_sample_id
         return self.data_array_sample_id
-    
-    def set_array_description(self, array_description) -> str:
+
+    @beartype
+    def set_array_description(self, array_description: str) -> str:
         # checks here
         
         self.data_array_description = array_description
         return self.data_array_description
-    
-    def set_array_plate(self, array_plate) -> str:
+
+    @beartype
+    def set_array_plate(self, array_plate: str) -> str:
         # checks here
         
         self.data_array_plate = array_plate
         return self.data_array_plate
-    
-    def set_array_well(self, array_well) -> str:
+
+    @beartype
+    def set_array_well(self, array_well: str) -> str:
         # checks here
         
         self.data_array_well = array_well
         return self.data_array_well
-    
-    def set_array_unknown_2(self, array_unknown_2) -> str:
+
+    @beartype
+    def set_array_unknown_2(self, array_unknown_2: str) -> str:
         # checks here
         
         self.data_array_unknown_2 = array_unknown_2
@@ -218,10 +261,10 @@ class IDATdata:
     def set_array_run_info(self, array_run_info: list[tuple[str, str, str, str, str]]) -> list[tuple[str, str, str, str, str]]:
         # checks here
         
-        print(array_run_info)
-        
         self.data_array_run_info = array_run_info
         return self.data_array_run_info
+
+
 
 class IDATfile(IDATdata):
 
@@ -390,47 +433,56 @@ class IDATfile(IDATdata):
         fh_in.seek(section_seek_index['ARRAY_BARCODE'])
         
         return self.set_array_barcode(read_string(fh_in))
-    
+
+    @beartype
     def parse_array_chip_type(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
         fh_in.seek(section_seek_index['ARRAY_CHIP_TYPE'])
         
         return self.set_array_chip_type(read_string(fh_in))
-    
+
+    @beartype
     def parse_array_chip_label(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
         fh_in.seek(section_seek_index['ARRAY_CHIP_LABEL'])
         
         return self.set_array_chip_label(read_string(fh_in))
-    
+
+    @beartype
     def parse_array_old_style_manifest(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
         fh_in.seek(section_seek_index['ARRAY_OLD_STYLE_MANIFEST'])
         
         return self.set_array_old_style_manifest(read_string(fh_in))
-    
-    def parse_array_unknown_1(self, fh_in: BufferedReader, section_seek_index: dict) -> list[int]:
+
+    @beartype
+    def parse_array_unknown_1(self, fh_in: BufferedReader, section_seek_index: dict) -> tuple[int, int, int, int]:
         fh_in.seek(section_seek_index['ARRAY_UNKNOWN_1'])
         
-        return self.set_array_unknown_1([read_byte(fh_in), read_byte(fh_in), read_byte(fh_in), read_byte(fh_in)])
-    
+        return self.set_array_unknown_1((read_byte(fh_in), read_byte(fh_in), read_byte(fh_in), read_byte(fh_in)))
+
+    @beartype
     def parse_array_sample_id(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
         fh_in.seek(section_seek_index['ARRAY_SAMPLE_ID'])
         
         return self.set_array_sample_id(read_string(fh_in))
-    
+
+    @beartype
     def parse_array_description(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
         fh_in.seek(section_seek_index['ARRAY_DESCRIPTION'])
         
         return self.set_array_description(read_string(fh_in))
-    
+
+    @beartype
     def parse_array_plate(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
         fh_in.seek(section_seek_index['ARRAY_PLATE'])
         
         return self.set_array_plate(read_string(fh_in))
-    
+
+    @beartype
     def parse_array_well(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
         fh_in.seek(section_seek_index['ARRAY_WELL'])
         
         return self.set_array_well(read_string(fh_in))
-    
+
+    @beartype
     def parse_array_unknown_2(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
         fh_in.seek(section_seek_index['ARRAY_UNKNOWN_2'])
         
@@ -445,10 +497,7 @@ class IDATfile(IDATdata):
         for i in range(read_int(fh_in)): # blocks containing 5 consequtive strings
             run_info.append((read_string(fh_in), read_string(fh_in), read_string(fh_in), read_string(fh_in), read_string(fh_in)))
         
-        print(run_info)
-        
         return self.set_array_run_info(run_info)
-    
 
     @beartype
     def parse(self) -> int:
@@ -485,6 +534,10 @@ d_red = IDATfile(Path("GSM6379997_203927450093_R01C01_Grn.idat"))
 d_grn = IDATfile(Path("GSM6379997_203927450093_R01C01_Red.idat"))
 
 
+print(d_red)
+
+import sys
+sys.exit()
 
 
 def get_magic(fh_in):
