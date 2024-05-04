@@ -74,7 +74,7 @@ def read_int(fh_in: BufferedReader) -> int:
     Returns:
         [integer] -- Signed integer value converted from the supplied bytes.
     """
-    return bytes_to_int(fh_in.read(4), signed=True) # probably not need to be signed...
+    return bytes_to_int(fh_in.read(4), signed=False) # probably not need to be signed...
 
 
 @beartype
@@ -87,7 +87,7 @@ def read_long(fh_in: BufferedReader) -> int:
     Returns:
         [integer] -- Signed integer value converted from the supplied bytes.
     """
-    return bytes_to_int(fh_in.read(8), signed=True) # probably not need to be signed...
+    return bytes_to_int(fh_in.read(8), signed=False) # probably not need to be signed...
 
 
 @beartype
