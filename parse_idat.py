@@ -278,18 +278,14 @@ class IDATreader:
     def parse_section_index(self, fh_in: BufferedReader, section_seek_index: dict) -> dict:
         section_index_order = []
         section_physical_order = {}
-        
+
         fh_in.seek(section_seek_index['SECTION_INDEX_N'])
         n_sections = read_int(fh_in)
-        
-        print("parsing")
-        
+
         for i in range(n_sections):
             section_type_int = read_short(fh_in)
             section_file_offset = read_long(fh_in)
-            
-            print(section_type_int,":", section_file_offset)
-            
+
             if section_type_int not in section_names:
                 raise Exception("Unimplemented section type: "+str(section_type_int))
             else:
@@ -554,9 +550,7 @@ class IDATwriter(IDATdata):
             offset += write_char(fh_out, self.data.file_magic)
             offset += write_long(fh_out, self.data.idat_version)
             offset += write_int(fh_out, len(self.data.section_index_order))
-            
-            print("##" , self.data.array_barcode  , binary_string_len(self.data.array_barcode))
-            
+
             section_sizes = {
                 "ARRAY_N_PROBES": 4,
                 "PROBE_IDS": (4 * self.data.array_n_probes),
@@ -581,8 +575,7 @@ class IDATwriter(IDATdata):
 
             offset_virtual = offset # should be 16
             offset_virtual += len(self.data.section_index_order) * (2 + 8)
-            
-            print("writing")
+
             for section in self.data.section_index_order:
                 section_code = [_ for _ in section_names.items() if _[1] == section][0][0]
                 
@@ -592,12 +585,10 @@ class IDATwriter(IDATdata):
                 offset_virtual_section = offset_virtual + sum(sections_before_sizes)
                 
                 offset += write_short(fh_out, section_code)
-                print(section_code,":", offset_virtual_section)
                 offset += write_long(fh_out, offset_virtual_section)
 
 
             for section in self.data.section_physical_order: # keep original order of sections in file
-                print(section)
                 if section == "ARRAY_N_PROBES":
                     offset += write_int(fh_out, self.data.array_n_probes)
                 elif section == "PROBE_IDS":
@@ -638,16 +629,14 @@ class IDATwriter(IDATdata):
                     offset += write_string(fh_out, self.data.array_well)
                 elif section == "ARRAY_UNKNOWN_2":
                     offset += write_string(fh_out, self.data.array_unknown_2)
-
-            print("offset:", offset)
-            n = len(self.data.array_run_info)
-            offset += write_int(fh_out, n)
-            for i in range(len(self.data.array_run_info)):
-                for j in range(5):
-                    offset += write_string(fh_out, self.data.array_run_info[i][j])
-
-            print("offset:", offset)
-
+                elif section == "ARRAY_RUN_INFO":
+                    n = len(self.data.array_run_info)
+                    offset += write_int(fh_out, n)
+                    for i in range(len(self.data.array_run_info)):
+                        for j in range(5):
+                            offset += write_string(fh_out, self.data.array_run_info[i][j])
+                else:
+                    raise Exception("Not implemented section: " + str(section))
 
 
 d_red = IDATreader(Path("GSM6379997_203927450093_R01C01_Grn.idat"))
