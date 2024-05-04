@@ -596,7 +596,7 @@ class IDATwriter(IDATdata):
                 offset += write_long(fh_out, offset_virtual_section)
 
 
-            for section in self.data.section_physical_order:
+            for section in self.data.section_physical_order: # keep original order of sections in file
                 print(section)
                 if section == "ARRAY_N_PROBES":
                     offset += write_int(fh_out, self.data.array_n_probes)
@@ -619,30 +619,23 @@ class IDATwriter(IDATdata):
                     offset += write_string(fh_out, self.data.array_barcode)
                 elif section == "ARRAY_CHIP_TYPE":
                     offset += write_string(fh_out, self.data.array_chip_type)
-            
-            print("offset:", offset)
-            offset += write_string(fh_out, self.data.array_chip_label)
-            
-            print("offset:", offset)
-            offset += write_string(fh_out, self.data.array_old_style_manifest)
-            
-            print("offset:", offset)
-            offset += write_char(fh_out, chr(self.data.array_unknown_1[0]))
-            offset += write_char(fh_out, chr(self.data.array_unknown_1[1]))
-            offset += write_char(fh_out, chr(self.data.array_unknown_1[2]))
-            offset += write_char(fh_out, chr(self.data.array_unknown_1[3]))
-            
-            print("offset:", offset)
-            offset += write_string(fh_out, self.data.array_sample_id)
-
-            print("offset:", offset)
-            offset += write_string(fh_out, self.data.array_description)
-
-            print("offset:", offset)
-            offset += write_string(fh_out, self.data.array_plate)
-
-            print("offset:", offset)
-            offset += write_string(fh_out, self.data.array_well)
+                elif section == "ARRAY_CHIP_LABEL":
+                    offset += write_string(fh_out, self.data.array_chip_label)
+                elif section == "ARRAY_OLD_STYLE_MANIFEST":
+                    offset += write_string(fh_out, self.data.array_old_style_manifest)
+                elif section == "ARRAY_UNKNOWN_1":
+                    offset += write_char(fh_out, chr(self.data.array_unknown_1[0]))
+                    offset += write_char(fh_out, chr(self.data.array_unknown_1[1]))
+                    offset += write_char(fh_out, chr(self.data.array_unknown_1[2]))
+                    offset += write_char(fh_out, chr(self.data.array_unknown_1[3]))
+                elif section == "ARRAY_SAMPLE_ID":
+                    offset += write_string(fh_out, self.data.array_sample_id)
+                elif section == "ARRAY_DESCRIPTION":
+                    offset += write_string(fh_out, self.data.array_description)
+                elif section == "ARRAY_PLATE":
+                    offset += write_string(fh_out, self.data.array_plate)
+                elif section == "ARRAY_WELL":
+                    offset += write_string(fh_out, self.data.array_well)
             
             print("offset:", offset)
             offset += write_string(fh_out, self.data.array_unknown_2)
