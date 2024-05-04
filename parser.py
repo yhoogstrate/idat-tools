@@ -74,7 +74,7 @@ def read_int(fh_in: BufferedReader) -> int:
     Returns:
         [integer] -- Signed integer value converted from the supplied bytes.
     """
-    return bytes_to_int(fh_in.read(4), signed=True)
+    return bytes_to_int(fh_in.read(4), signed=True) # probably not need to be signed...
 
 
 @beartype
@@ -87,7 +87,7 @@ def read_long(fh_in: BufferedReader) -> int:
     Returns:
         [integer] -- Signed integer value converted from the supplied bytes.
     """
-    return bytes_to_int(fh_in.read(8), signed=True)
+    return bytes_to_int(fh_in.read(8), signed=True) # probably not need to be signed...
 
 
 @beartype
@@ -182,6 +182,7 @@ def write_int(fh_out: BufferedWriter, out: int) -> int:
 def write_long(fh_out: BufferedWriter, out: int) -> int:
     return fh_out.write(int_to_bytes(out, 8))
 
+
 @beartype
 def binary_string_len(string: str) -> int:
     """
@@ -199,7 +200,7 @@ def binary_string_len(string: str) -> int:
     l = len(string)
     l_enc = long_to_7bit_string(l)
     
-    return len(l_enc)
+    return len(l_enc) + l
 
 
 
