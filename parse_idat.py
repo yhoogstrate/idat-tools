@@ -608,11 +608,9 @@ class IDATwriter(IDATdata):
                     offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_mean_intensities"].to_numpy("<u2"))
                 elif section == "PROBE_N_BEADS":
                     offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_n_beads"].to_numpy("<u1"))
-
-
-            print("offset:", offset)
-            offset += write_int(fh_out, self.data.array_n_probes)
-            offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_mid_block"].to_numpy("<u4"))
+                elif section == "PROBE_MID_BLOCK":
+                    offset += write_int(fh_out, self.data.array_n_probes)
+                    offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_mid_block"].to_numpy("<u4"))
 
             print("offset:", offset)
             offset += write_int(fh_out, self.data.array_red_green)
