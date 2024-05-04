@@ -617,9 +617,8 @@ class IDATwriter(IDATdata):
                     offset += write_string(fh_out, self.data.array_manifest)
                 elif section == "ARRAY_BARCODE":
                     offset += write_string(fh_out, self.data.array_barcode)
-
-            print("offset:", offset)
-            offset += write_string(fh_out, self.data.array_chip_type)
+                elif section == "ARRAY_CHIP_TYPE":
+                    offset += write_string(fh_out, self.data.array_chip_type)
             
             print("offset:", offset)
             offset += write_string(fh_out, self.data.array_chip_label)
