@@ -636,9 +636,8 @@ class IDATwriter(IDATdata):
                     offset += write_string(fh_out, self.data.array_plate)
                 elif section == "ARRAY_WELL":
                     offset += write_string(fh_out, self.data.array_well)
-            
-            print("offset:", offset)
-            offset += write_string(fh_out, self.data.array_unknown_2)
+                elif section == "ARRAY_UNKNOWN_2":
+                    offset += write_string(fh_out, self.data.array_unknown_2)
 
             print("offset:", offset)
             n = len(self.data.array_run_info)
