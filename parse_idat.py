@@ -613,12 +613,10 @@ class IDATwriter(IDATdata):
                     offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_mid_block"].to_numpy("<u4"))
                 elif section == "ARRAY_RED_GREEN":
                     offset += write_int(fh_out, self.data.array_red_green)
-            
-            print("offset:", offset)
-            offset += write_string(fh_out, self.data.array_manifest)
-            
-            print("offset:", offset)
-            offset += write_string(fh_out, self.data.array_barcode)
+                elif section == "ARRAY_MANIFEST":
+                    offset += write_string(fh_out, self.data.array_manifest)
+                elif section == "ARRAY_BARCODE":
+                    offset += write_string(fh_out, self.data.array_barcode)
 
             print("offset:", offset)
             offset += write_string(fh_out, self.data.array_chip_type)
