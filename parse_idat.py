@@ -596,14 +596,11 @@ class IDATwriter(IDATdata):
                 offset += write_long(fh_out, offset_virtual_section)
 
 
-            # @todo for section in self.data.section_physical_order:
+            for section in self.data.section_physical_order:
+                if section == "ARRAY_N_PROBES":
+                    offset += write_int(fh_out, self.data.array_n_probes)
 
-            print()
-            print("phy", self.data.section_physical_order)
-            print()
-        
             print("offset:", offset)
-            offset += write_int(fh_out, self.data.array_n_probes)
 
             print("offset:", offset)
             offset += write_numpy_vector(fh_out, self.data.per_probe_matrix["probe_ids"].to_numpy("<u4"))
