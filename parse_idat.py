@@ -314,7 +314,7 @@ class IDATreader:
         if self.data.array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        probe_ids = read_numpy_vector(fh_in, '<u4', self.data.array_n_probes) # layout-check: (4207470- 210) / 1051815 = 4
+        probe_ids = read_numpy_vector(fh_in, np.dtype('<u4'), self.data.array_n_probes) # layout-check: (4207470- 210) / 1051815 = 4
         
         if np.any(probe_ids <= 0):
             raise Exception("Wrong probe id's found")
@@ -331,7 +331,7 @@ class IDATreader:
         if self.data.array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        probe_std_devs = read_numpy_vector(fh_in, '<u2', self.data.array_n_probes) # layout-check: (6311100 - 4207470) / 1051815 = 2
+        probe_std_devs = read_numpy_vector(fh_in, np.dtype('<u2'), self.data.array_n_probes) # layout-check: (6311100 - 4207470) / 1051815 = 2
         
         if np.any(probe_std_devs < 0):
             raise Exception("Wrong std dev found (0 or negative)")
@@ -345,7 +345,7 @@ class IDATreader:
         if self.data.array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        probe_mean_intensities = read_numpy_vector(fh_in, '<u2', self.data.array_n_probes) # layout-check: (8414730 - 6311100) / 1051815 = 2
+        probe_mean_intensities = read_numpy_vector(fh_in, np.dtype('<u2'), self.data.array_n_probes) # layout-check: (8414730 - 6311100) / 1051815 = 2
         
         if np.any(probe_mean_intensities < 0):
             raise Exception("Wrong median probe intensity found (negative)")
@@ -359,7 +359,7 @@ class IDATreader:
         if self.data.array_n_probes is None:
             self.parse_array_n_probes(fh_in, section_seek_index)
         
-        probe_n_beads = read_numpy_vector(fh_in, '<u1', self.data.array_n_probes) # layout-check: (9466545 - 8414730) / 1051815 = 1
+        probe_n_beads = read_numpy_vector(fh_in, np.dtype('<u1'), self.data.array_n_probes) # layout-check: (9466545 - 8414730) / 1051815 = 1
         
         if np.any(probe_n_beads < 0):
             raise Exception("Wrong number of beads per probe found (0 or negative)")
@@ -376,7 +376,7 @@ class IDATreader:
         if self.data.array_n_probes != read_int(fh_in):
             raise Exception("Weird discrepancy between number of probes and size of mid block")
         
-        probe_mid_block = read_numpy_vector(fh_in, '<u4', self.data.array_n_probes) # layout-check: (13673809 - (9466545 + 4)) / 1051815 = 4
+        probe_mid_block = read_numpy_vector(fh_in, np.dtype('<u4'), self.data.array_n_probes) # layout-check: (13673809 - (9466545 + 4)) / 1051815 = 4
         
         if np.any(probe_mid_block <= 0):
             raise Exception("Wrong probe id's found")
@@ -639,12 +639,51 @@ class IDATwriter(IDATdata):
                     raise Exception("Not implemented section: " + str(section))
 
 
-d_red = IDATreader(Path("GSM6379997_203927450093_R01C01_Grn.idat"))
+class IDATmixer:
+    @beartype
+    def __init__(self, idat_reference: IDATdata):
+        if isinstance(idat_reference, IDATdata):
+            self.data_idat_ref = idat_reference
+        elif isinstance(idat_reference, IDATreader):
+            self.data_idat_ref = idat_reference.data
+        else:
+            raise Exception("Unclear input type (idat_reference)")
+
+    @beartype
+    def mix(self, idat_mixed_in: IDATdata,  mixed_in_fraction: float, output_file: Path):
+        if isinstance(idat_mixed_in, IDATdata):
+            pass # ok
+        elif isinstance(idat_mixed_in, IDATreader):
+            idat_mixed_in = idat_mixed_in.data
+        else:
+            raise Exception("Unclear input type (idat_mixed_in)")
+
+        mixed_data = IDATdata()
+        if self.data_idat_ref.file_magic != idat_mixed_in.file_magic:
+            raise Exception("Different file magic's between reference and mixed-in sample")
+        else:
+            mixed_data.set_file_magic = self.data_idat_ref.file_magic
+            
+        if self.data_idat_ref.idat_version != idat_mixed_in.idat_version:
+            raise Exception("Different idat versions between reference and mixed-in sample")
+        else:
+            mixed_data.set_idat_version = self.data_idat_ref.idat_version
+        
+        
+
+d_red = IDATreader(Path("GSM6379997_203927450093_R01C01_Red.idat"))
+d_grn = IDATreader(Path("GSM6379997_203927450093_R01C01_Grn.idat"))
 
 w = IDATwriter(d_red.data)
-w.write(Path("test.idat"))
+w.write(Path("test_Red.idat"))
 
-#d_grn = IDATreader(Path("GSM6379997_203927450093_R01C01_Red.idat"))
+w = IDATwriter(d_grn.data)
+w.write(Path("test_Grn.idat"))
+
+
+mix = IDATmixer(d_red.data)
+mix.mix(d_grn.data, 0.5, Path("mix_0.5.idat"))
+    
 
 
 

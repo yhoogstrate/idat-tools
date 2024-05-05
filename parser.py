@@ -3,7 +3,7 @@
 
 import math
 import numpy as np
-
+from numpy import dtype
 
 from beartype import beartype
 from _io import BufferedReader
@@ -129,7 +129,7 @@ def read_string(fh_in: BufferedReader) -> str:
 
 
 @beartype
-def read_numpy_vector(fh_in: BufferedReader, dtype: str, n_elements: int):
+def read_numpy_vector(fh_in: BufferedReader, dtype: dtype, n_elements: int):
     # https://stackoverflow.com/questions/72838939/how-to-convert-the-string-between-numpy-array-and-bytes
     """Parses a binary file multiple times, allowing for control if the
     file ends prematurely. This replaces read_results() and runs faster.
