@@ -67,7 +67,8 @@ class IDATdata(object):
         self.array_well = None
         self.array_unknown_2 = None
         self.array_run_info: None
-    
+
+
     def __str__(self):
         out = ""
         
@@ -100,7 +101,8 @@ class IDATdata(object):
         out += str(self.per_probe_matrix)
 
         return out
-    
+
+
     @beartype
     def set_file_magic(self, file_magic: str) -> str:
         if file_magic != "IDAT":
@@ -109,7 +111,8 @@ class IDATdata(object):
             self.file_magic = file_magic
         
         return self.file_magic
-    
+
+
     @beartype
     def set_idat_version(self, idat_version: int) -> int:
         if idat_version != 3:
@@ -118,7 +121,8 @@ class IDATdata(object):
             self.idat_version = idat_version
         
         return self.idat_version
-    
+
+
     @beartype
     def set_array_n_probes(self, array_n_probes: int) -> int:
         if array_n_probes <= 0:
@@ -127,6 +131,7 @@ class IDATdata(object):
             self.array_n_probes = array_n_probes
         
         return self.array_n_probes
+
 
     @beartype
     def set_section_index_order(self, section_index_order: list[str]) -> list[str]:
@@ -137,6 +142,7 @@ class IDATdata(object):
         self.section_index_order = section_index_order
         return self.section_index_order
 
+
     @beartype
     def set_section_physical_order(self, section_physical_order: list[str]) -> list[str]:
         for _ in section_physical_order:
@@ -145,6 +151,7 @@ class IDATdata(object):
         
         self.section_physical_order = section_physical_order
         return self.section_physical_order
+
 
     @beartype
     def set_per_probe_matrix(self, per_probe_matrix: DataFrame) -> DataFrame:
@@ -157,6 +164,7 @@ class IDATdata(object):
         self.per_probe_matrix = per_probe_matrix
         return self.per_probe_matrix
 
+
     @beartype
     def set_array_red_green(self, array_red_green: int) -> int:
         # checks here
@@ -164,13 +172,15 @@ class IDATdata(object):
         self.array_red_green = array_red_green
         return self.array_red_green
 
+
     @beartype
     def set_array_manifest(self, array_manifest: str) -> str:
         # checks here
         
         self.array_manifest = array_manifest
         return self.array_manifest
-    
+
+
     @beartype
     def set_array_barcode(self, array_barcode: str) -> str:
         if not re.match(r"^[0-9]+$", array_barcode):
@@ -178,7 +188,8 @@ class IDATdata(object):
         
         self.array_barcode = array_barcode
         return self.array_barcode
-    
+
+
     @beartype
     def set_array_chip_type(self, array_chip_type: str) -> str:
         if array_chip_type != "BeadChip 8x5":
@@ -186,7 +197,8 @@ class IDATdata(object):
         
         self.array_chip_type = array_chip_type
         return self.array_chip_type
-    
+
+
     @beartype
     def set_array_chip_label(self, array_chip_label: str) -> str:
         if not re.match(r"^R[0-9]+C[0-9]+$", array_chip_label):
@@ -194,27 +206,31 @@ class IDATdata(object):
         
         self.array_chip_label = array_chip_label
         return self.array_chip_label
-    
+
+
     @beartype
     def set_array_old_style_manifest(self, array_old_style_manifest: str) -> str:
         # checks here
         
         self.array_old_style_manifest = array_old_style_manifest
         return self.array_old_style_manifest
-    
+
+
     @beartype
     def set_array_unknown_1(self, array_unknown_1: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
         # checks here
         
         self.array_unknown_1 = array_unknown_1
         return self.array_unknown_1
-    
+
+
     @beartype
     def set_array_sample_id(self, array_sample_id: str) -> str:
         # checks here
         
         self.array_sample_id = array_sample_id
         return self.array_sample_id
+
 
     @beartype
     def set_array_description(self, array_description: str) -> str:
@@ -223,12 +239,14 @@ class IDATdata(object):
         self.array_description = array_description
         return self.array_description
 
+
     @beartype
     def set_array_plate(self, array_plate: str) -> str:
         # checks here
         
         self.array_plate = array_plate
         return self.array_plate
+
 
     @beartype
     def set_array_well(self, array_well: str) -> str:
@@ -237,13 +255,15 @@ class IDATdata(object):
         self.array_well = array_well
         return self.array_well
 
+
     @beartype
     def set_array_unknown_2(self, array_unknown_2: str) -> str:
         # checks here
         
         self.array_unknown_2 = array_unknown_2
         return self.array_unknown_2
-    
+
+
     @beartype
     def set_array_run_info(self, array_run_info: list[tuple[str, str, str, str, str]]) -> list[tuple[str, str, str, str, str]]:
         # checks here
@@ -668,8 +688,13 @@ class IDATmixer:
             raise Exception("Different idat versions between reference and mixed-in sample")
         else:
             mixed_data.set_idat_version = self.data_idat_ref.idat_version
-        
-        
+
+
+
+
+
+
+
 
 d_red = IDATreader(Path("GSM6379997_203927450093_R01C01_Red.idat"))
 d_grn = IDATreader(Path("GSM6379997_203927450093_R01C01_Grn.idat"))
