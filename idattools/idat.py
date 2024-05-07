@@ -89,9 +89,7 @@ class IDATdata(object):
         out += " v"
         out += str(self.idat_version)
         out += ": "
-        out += self.array_barcode
-        out += "_"
-        out += self.array_chip_label
+        out += self.get_sentrix_id()
         out += " (R/G: "
         out += str(self.array_red_green)
         out += ", "
@@ -270,6 +268,9 @@ class IDATdata(object):
         
         self.array_run_info = array_run_info
         return self.array_run_info
+
+    def get_sentrix_id(self):
+        return self.array_barcode + "_" + self.array_chip_label
 
 
 

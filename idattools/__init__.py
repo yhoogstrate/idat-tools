@@ -25,7 +25,7 @@
     <https://github.com/yhoogstrate/dr-disco>
 
     You can e-mail me via 'y.hoogstrate' at the following webmail domain:
-    gmail dot com
+    erasmusmc dot nl
 """
 
 import logging
