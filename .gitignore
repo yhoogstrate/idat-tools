@@ -1,4 +1,26 @@
-*.idat
-.venv
+# python associated
+/.cache
+/build
+/dist
+/htmlcov/*
+*.coverage
+*.egg-info
+*.eggs
+*.pyc
 __pycache__
-debug.txt
+*.egg-info
+
+
+# project related
+*.idat
+
+# Development / OS
+*.swp
+.venv
+.directory
+*.backup
+.~lock.*
+*.ods
+*.png
+*.jpg
+*.jpeg

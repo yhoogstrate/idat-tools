@@ -4,14 +4,16 @@
 # https://github.com/HenrikBengtsson/illuminaio/blob/develop/R/readIDAT_nonenc.R
 # https://github.com/bioinformed/glu-genetics/blob/dcbbbf67a308d35e157b20a9c76373530510379a/glu/lib/illumina.py#L44-L61
 
+import idattools # log
+from .utils import *
 
-from parser import *
 from pathlib import Path
+import os
 import re
+import random
 
 from beartype import beartype
-from _io import BufferedReader
-from _io import BufferedWriter
+from _io import BufferedReader, BufferedWriter
 
 import numpy as np
 from numpy import ndarray
@@ -67,7 +69,8 @@ class IDATdata(object):
         self.array_well = None
         self.array_unknown_2 = None
         self.array_run_info: None
-    
+
+
     def __str__(self):
         out = ""
         
@@ -88,9 +91,7 @@ class IDATdata(object):
         out += " v"
         out += str(self.idat_version)
         out += ": "
-        out += self.array_barcode
-        out += "_"
-        out += self.array_chip_label
+        out += self.get_sentrix_id()
         out += " (R/G: "
         out += str(self.array_red_green)
         out += ", "
@@ -100,7 +101,8 @@ class IDATdata(object):
         out += str(self.per_probe_matrix)
 
         return out
-    
+
+
     @beartype
     def set_file_magic(self, file_magic: str) -> str:
         if file_magic != "IDAT":
@@ -109,7 +111,8 @@ class IDATdata(object):
             self.file_magic = file_magic
         
         return self.file_magic
-    
+
+
     @beartype
     def set_idat_version(self, idat_version: int) -> int:
         if idat_version != 3:
@@ -118,7 +121,8 @@ class IDATdata(object):
             self.idat_version = idat_version
         
         return self.idat_version
-    
+
+
     @beartype
     def set_array_n_probes(self, array_n_probes: int) -> int:
         if array_n_probes <= 0:
@@ -127,6 +131,7 @@ class IDATdata(object):
             self.array_n_probes = array_n_probes
         
         return self.array_n_probes
+
 
     @beartype
     def set_section_index_order(self, section_index_order: list[str]) -> list[str]:
@@ -137,6 +142,7 @@ class IDATdata(object):
         self.section_index_order = section_index_order
         return self.section_index_order
 
+
     @beartype
     def set_section_physical_order(self, section_physical_order: list[str]) -> list[str]:
         for _ in section_physical_order:
@@ -146,6 +152,7 @@ class IDATdata(object):
         self.section_physical_order = section_physical_order
         return self.section_physical_order
 
+
     @beartype
     def set_per_probe_matrix(self, per_probe_matrix: DataFrame) -> DataFrame:
         if per_probe_matrix.shape[0] != self.array_n_probes:
@@ -154,8 +161,25 @@ class IDATdata(object):
         if not per_probe_matrix['probe_ids'].equals(per_probe_matrix['probe_mid_block']):
             raise Exception("Discrepance between probe_ids and probe_mid_block")
 
+        if per_probe_matrix['probe_ids'].dtype != dtype("uint32"):
+            raise Exception("Wrong format for probe_ids")
+
+        if per_probe_matrix['probe_std_devs'].dtype != dtype("uint16"):
+            raise Exception("Wrong format for probe_std_devs")
+
+        if per_probe_matrix['probe_mean_intensities'].dtype != dtype("uint16"):
+            raise Exception("Wrong format for probe_mean_intensities")
+
+        if per_probe_matrix['probe_n_beads'].dtype != dtype("uint8"):
+            raise Exception("Wrong format for probe_n_beads")
+
+        if per_probe_matrix['probe_mid_block'].dtype != dtype("uint32"):
+            raise Exception("Wrong format for probe_mid_block")
+
+
         self.per_probe_matrix = per_probe_matrix
         return self.per_probe_matrix
+
 
     @beartype
     def set_array_red_green(self, array_red_green: int) -> int:
@@ -164,13 +188,15 @@ class IDATdata(object):
         self.array_red_green = array_red_green
         return self.array_red_green
 
+
     @beartype
     def set_array_manifest(self, array_manifest: str) -> str:
         # checks here
         
         self.array_manifest = array_manifest
         return self.array_manifest
-    
+
+
     @beartype
     def set_array_barcode(self, array_barcode: str) -> str:
         if not re.match(r"^[0-9]+$", array_barcode):
@@ -178,7 +204,8 @@ class IDATdata(object):
         
         self.array_barcode = array_barcode
         return self.array_barcode
-    
+
+
     @beartype
     def set_array_chip_type(self, array_chip_type: str) -> str:
         if array_chip_type != "BeadChip 8x5":
@@ -186,7 +213,8 @@ class IDATdata(object):
         
         self.array_chip_type = array_chip_type
         return self.array_chip_type
-    
+
+
     @beartype
     def set_array_chip_label(self, array_chip_label: str) -> str:
         if not re.match(r"^R[0-9]+C[0-9]+$", array_chip_label):
@@ -194,27 +222,31 @@ class IDATdata(object):
         
         self.array_chip_label = array_chip_label
         return self.array_chip_label
-    
+
+
     @beartype
     def set_array_old_style_manifest(self, array_old_style_manifest: str) -> str:
         # checks here
         
         self.array_old_style_manifest = array_old_style_manifest
         return self.array_old_style_manifest
-    
+
+
     @beartype
     def set_array_unknown_1(self, array_unknown_1: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
         # checks here
         
         self.array_unknown_1 = array_unknown_1
         return self.array_unknown_1
-    
+
+
     @beartype
     def set_array_sample_id(self, array_sample_id: str) -> str:
         # checks here
         
         self.array_sample_id = array_sample_id
         return self.array_sample_id
+
 
     @beartype
     def set_array_description(self, array_description: str) -> str:
@@ -223,12 +255,14 @@ class IDATdata(object):
         self.array_description = array_description
         return self.array_description
 
+
     @beartype
     def set_array_plate(self, array_plate: str) -> str:
         # checks here
         
         self.array_plate = array_plate
         return self.array_plate
+
 
     @beartype
     def set_array_well(self, array_well: str) -> str:
@@ -237,19 +271,24 @@ class IDATdata(object):
         self.array_well = array_well
         return self.array_well
 
+
     @beartype
     def set_array_unknown_2(self, array_unknown_2: str) -> str:
         # checks here
         
         self.array_unknown_2 = array_unknown_2
         return self.array_unknown_2
-    
+
+
     @beartype
     def set_array_run_info(self, array_run_info: list[tuple[str, str, str, str, str]]) -> list[tuple[str, str, str, str, str]]:
         # checks here
         
         self.array_run_info = array_run_info
         return self.array_run_info
+
+    def get_sentrix_id(self):
+        return self.array_barcode + "_" + self.array_chip_label
 
 
 
@@ -658,32 +697,141 @@ class IDATmixer:
         else:
             raise Exception("Unclear input type (idat_mixed_in)")
 
+        idattools.log.debug("Initializing new IDATdata object")
         mixed_data = IDATdata()
+        # check file_magic
         if self.data_idat_ref.file_magic != idat_mixed_in.file_magic:
-            raise Exception("Different file magic's between reference and mixed-in sample")
+            raise Exception("Different file magic's between reference and mixed-in sample - should never happen")
         else:
-            mixed_data.set_file_magic = self.data_idat_ref.file_magic
-            
+            mixed_data.set_file_magic(self.data_idat_ref.file_magic)
+
+        # check idat_version
         if self.data_idat_ref.idat_version != idat_mixed_in.idat_version:
             raise Exception("Different idat versions between reference and mixed-in sample")
         else:
-            mixed_data.set_idat_version = self.data_idat_ref.idat_version
+            mixed_data.set_idat_version(self.data_idat_ref.idat_version)
+
+        if self.data_idat_ref.section_index_order !=  idat_mixed_in.section_index_order:
+            idattools.log.warning("Order in which indexes are written differs, using the order from 'ref'")
+        mixed_data.set_section_index_order(self.data_idat_ref.section_index_order)
+
+        if self.data_idat_ref.section_physical_order !=  idat_mixed_in.section_physical_order:
+            idattools.log.warning("Order in which sections are written differs, using the order from 'ref'")
+        mixed_data.set_section_physical_order(self.data_idat_ref.section_physical_order)
+
+        if self.data_idat_ref.array_n_probes != idat_mixed_in.array_n_probes:
+            raise Exception("Different sized arrays are merged - has to be looked into, taking intersection may be an option")
+        else:
+            mixed_data.set_array_n_probes(self.data_idat_ref.array_n_probes)
+
+        if self.data_idat_ref.array_red_green != idat_mixed_in.array_red_green:
+            raise Exception("Differences in red_green value - odd, since this value seems to be always 0")
+        else:
+            mixed_data.set_array_red_green(self.data_idat_ref.array_red_green)
+
+        if self.data_idat_ref.array_chip_type != idat_mixed_in.array_chip_type:
+            raise Exception("Incompatible chip types: " + str(self.data_idat_ref.array_chip_type) + " and " + str(idat_mixed_in.array_chip_type))
+        else:
+            mixed_data.set_array_chip_type(self.data_idat_ref.array_chip_type)
+
+        if self.data_idat_ref.array_old_style_manifest != idat_mixed_in.array_old_style_manifest:
+            raise Exception("Differences in old_style_manifest value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_old_style_manifest(self.data_idat_ref.array_old_style_manifest)
+
+        if self.data_idat_ref.array_unknown_1 != idat_mixed_in.array_unknown_1:
+            raise Exception("Differences in unknown_1 value - odd, since this value seems to be always 4x0")
+        else:
+            mixed_data.set_array_unknown_1(self.data_idat_ref.array_unknown_1)
+
+        if self.data_idat_ref.array_sample_id != idat_mixed_in.array_sample_id:
+            raise Exception("Differences in sample_id value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_sample_id(self.data_idat_ref.array_sample_id)
+
+        if self.data_idat_ref.array_description != idat_mixed_in.array_description:
+            raise Exception("Differences in description value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_description(self.data_idat_ref.array_description)
+
+        if self.data_idat_ref.array_plate != idat_mixed_in.array_plate:
+            raise Exception("Differences in plate value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_plate(self.data_idat_ref.array_plate)
+
+        if self.data_idat_ref.array_well != idat_mixed_in.array_well:
+            raise Exception("Differences in well value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_well(self.data_idat_ref.array_well)
+
+        if self.data_idat_ref.array_unknown_2 != idat_mixed_in.array_unknown_2:
+            raise Exception("Differences in unknown_2 value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_unknown_2(self.data_idat_ref.array_unknown_2)
+
+        if re.match("^[0-9]{12}_R[0-9]{2}C[0-9]{2}.+idat$", os.path.basename(output_file)):
+            barcode = os.path.basename(output_file).split("_")[0]
+            chip_label = os.path.basename(output_file).split("_")[1][0:6]
+        else:
+            # @todo create some has of all the new data, and convert it to numeric weights (reproducible rather than random identifiers)
+            barcode = "20"
+            for i in range(10):
+                barcode += str(random.randint(0,9))
+
+            chip_label = "R0" + str(random.randint(1,8)) + "C01"
+
+            idattools.log.warning("Output file does not comply with sentrix_id nomenclature ('012345678012_R0x_C0y.idat'), generating random one: "+str(barcode) + "_" + str(chip_label))
+
+        mixed_data.set_array_barcode(barcode)
+        mixed_data.set_array_chip_label(chip_label)
+        idattools.log.debug("sentrix_id of mixed output file: " + mixed_data.get_sentrix_id())
+
+        if np.any(self.data_idat_ref.per_probe_matrix.columns != idat_mixed_in.per_probe_matrix.columns):
+            raise Exception("Different data columns in the arrays")
+
+        if np.any(self.data_idat_ref.per_probe_matrix["probe_ids"] != idat_mixed_in.per_probe_matrix["probe_ids"]):
+            raise Exception("Arrays have different probe_ids (or ordering?)")
+
+        if np.any(self.data_idat_ref.per_probe_matrix["probe_mid_block"] != idat_mixed_in.per_probe_matrix["probe_mid_block"]):
+            raise Exception("Arrays have different probe_mid_block id's (or ordering?)")
+
+
+        new_data = pd.DataFrame({
+            'probe_ids': self.data_idat_ref.per_probe_matrix["probe_ids"],
+            
+            'probe_std_devs': round((self.data_idat_ref.per_probe_matrix["probe_std_devs"] * (1 - mixed_in_fraction)) + (idat_mixed_in.per_probe_matrix["probe_std_devs"] * (mixed_in_fraction))).to_numpy("<u2"),
+            'probe_mean_intensities': round((self.data_idat_ref.per_probe_matrix["probe_mean_intensities"] * (1 - mixed_in_fraction)) + (idat_mixed_in.per_probe_matrix["probe_mean_intensities"] * (mixed_in_fraction))).to_numpy("<u2"),
+            'probe_n_beads': round((self.data_idat_ref.per_probe_matrix["probe_n_beads"] * (1 - mixed_in_fraction)) + (idat_mixed_in.per_probe_matrix["probe_n_beads"] * (mixed_in_fraction))).to_numpy("<u1"),
+            
+            'probe_mid_block': self.data_idat_ref.per_probe_matrix["probe_mid_block"]
+            })
         
+        mixed_data.set_per_probe_matrix(new_data)
+
+        if len(self.data_idat_ref.array_run_info) != len(idat_mixed_in.array_run_info):
+            raise Exception("different array_run_info size")
+        else:
+            ri = []
+            for i in range(len(self.data_idat_ref.array_run_info)):
+                rir = (
+                    self.data_idat_ref.get_sentrix_id() + ":" + self.data_idat_ref.array_run_info[i][0] + "&" + \
+                    idat_mixed_in.get_sentrix_id() + ":" + idat_mixed_in.array_run_info[i][0],
+                    self.data_idat_ref.get_sentrix_id() + ":" + self.data_idat_ref.array_run_info[i][1] + "&" + \
+                    idat_mixed_in.get_sentrix_id() + ":" + idat_mixed_in.array_run_info[i][1],
+                    self.data_idat_ref.get_sentrix_id() + ":" + self.data_idat_ref.array_run_info[i][2] + "&" + \
+                    idat_mixed_in.get_sentrix_id() + ":" + idat_mixed_in.array_run_info[i][2],
+                    self.data_idat_ref.get_sentrix_id() + ":" + self.data_idat_ref.array_run_info[i][3] + "&" + \
+                    idat_mixed_in.get_sentrix_id() + ":" + idat_mixed_in.array_run_info[i][3],
+                    self.data_idat_ref.get_sentrix_id() + ":" + self.data_idat_ref.array_run_info[i][4] + "&" + \
+                    idat_mixed_in.get_sentrix_id() + ":" + idat_mixed_in.array_run_info[i][4]
+                )
+
+                ri.append(rir)
+            
+        mixed_data.set_array_run_info(ri)
         
+        return mixed_data
 
-d_red = IDATreader(Path("GSM6379997_203927450093_R01C01_Red.idat"))
-d_grn = IDATreader(Path("GSM6379997_203927450093_R01C01_Grn.idat"))
-
-w = IDATwriter(d_red.data)
-w.write(Path("test_Red.idat"))
-
-w = IDATwriter(d_grn.data)
-w.write(Path("test_Grn.idat"))
-
-
-mix = IDATmixer(d_red.data)
-mix.mix(d_grn.data, 0.5, Path("mix_0.5.idat"))
-    
 
 
 
