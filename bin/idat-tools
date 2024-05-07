@@ -24,8 +24,15 @@ def CLI():
 
 @CLI.command(name="view", short_help="View IDAT details (with [small] data summary)")
 @click.argument('idat_file', type=click.Path(exists=True))
-def CLI_view(idat_file):
+@click.option('-n', type=click.IntRange(min=1), default=10, help="Number of lines to print.", show_default=1)
+def CLI_view(idat_file, n):
     idat_r = IDATreader(Path(idat_file))
+
+    pd.set_option('display.min_rows', n)
+    pd.set_option('display.max_rows', n)
+    pd.set_option('display.width', 240)
+    pd.set_option('display.max_columns', 500)
+
     print(str(idat_r.data))
 
 
