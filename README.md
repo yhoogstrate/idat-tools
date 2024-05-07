@@ -71,9 +71,9 @@ IDAT v3: 203927450093_R01C01 (R/G: 0, BeadChip 8x5)
 [1051815 rows x 5 columns]
 ```
 
-## idat-tools view
+## idat-tools mix
 
-Usage [idat-tools view]:
+Usage [idat-tools mix]:
 ```{bash}
 idat-tools mix --help
 Usage: idat-tools mix [OPTIONS] IDAT_FILE_REFERENCE IDAT_FILE_MIXED_IN
