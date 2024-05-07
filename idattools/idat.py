@@ -161,6 +161,22 @@ class IDATdata(object):
         if not per_probe_matrix['probe_ids'].equals(per_probe_matrix['probe_mid_block']):
             raise Exception("Discrepance between probe_ids and probe_mid_block")
 
+        if per_probe_matrix['probe_ids'].dtype != dtype("uint32"):
+            raise Exception("Wrong format for probe_ids")
+
+        if per_probe_matrix['probe_std_devs'].dtype != dtype("uint16"):
+            raise Exception("Wrong format for probe_std_devs")
+
+        if per_probe_matrix['probe_mean_intensities'].dtype != dtype("uint16"):
+            raise Exception("Wrong format for probe_mean_intensities")
+
+        if per_probe_matrix['probe_n_beads'].dtype != dtype("uint8"):
+            raise Exception("Wrong format for probe_n_beads")
+
+        if per_probe_matrix['probe_mid_block'].dtype != dtype("uint32"):
+            raise Exception("Wrong format for probe_mid_block")
+
+
         self.per_probe_matrix = per_probe_matrix
         return self.per_probe_matrix
 
@@ -687,13 +703,13 @@ class IDATmixer:
         if self.data_idat_ref.file_magic != idat_mixed_in.file_magic:
             raise Exception("Different file magic's between reference and mixed-in sample - should never happen")
         else:
-            mixed_data.set_file_magic = self.data_idat_ref.file_magic
+            mixed_data.set_file_magic(self.data_idat_ref.file_magic)
 
         # check idat_version
         if self.data_idat_ref.idat_version != idat_mixed_in.idat_version:
             raise Exception("Different idat versions between reference and mixed-in sample")
         else:
-            mixed_data.set_idat_version = self.data_idat_ref.idat_version
+            mixed_data.set_idat_version(self.data_idat_ref.idat_version)
 
         if self.data_idat_ref.section_index_order !=  idat_mixed_in.section_index_order:
             idattools.log.warning("Order in which indexes are written differs, using the order from 'ref'")
@@ -715,6 +731,8 @@ class IDATmixer:
 
         if self.data_idat_ref.array_chip_type != idat_mixed_in.array_chip_type:
             raise Exception("Incompatible chip types: " + str(self.data_idat_ref.array_chip_type) + " and " + str(idat_mixed_in.array_chip_type))
+        else:
+            mixed_data.set_array_chip_type(self.data_idat_ref.array_chip_type)
 
         if self.data_idat_ref.array_old_style_manifest != idat_mixed_in.array_old_style_manifest:
             raise Exception("Differences in old_style_manifest value - odd, since this value seems to be always ''")
@@ -766,32 +784,53 @@ class IDATmixer:
 
         mixed_data.set_array_barcode(barcode)
         mixed_data.set_array_chip_label(chip_label)
+        idattools.log.debug("sentrix_id of mixed output file: " + mixed_data.get_sentrix_id())
 
-"""
-        self.file_magic = None
-        self.idat_version = None
-        self.section_index_order = None # the order of sections in index is typically different from implementation in the body
-        self.section_physical_order = None        
-        self.array_n_probes = None
-        self.array_red_green = None
-        self.array_manifest = None
+        if np.any(self.data_idat_ref.per_probe_matrix.columns != idat_mixed_in.per_probe_matrix.columns):
+            raise Exception("Different data columns in the arrays")
+
+        if np.any(self.data_idat_ref.per_probe_matrix["probe_ids"] != idat_mixed_in.per_probe_matrix["probe_ids"]):
+            raise Exception("Arrays have different probe_ids (or ordering?)")
+
+        if np.any(self.data_idat_ref.per_probe_matrix["probe_mid_block"] != idat_mixed_in.per_probe_matrix["probe_mid_block"]):
+            raise Exception("Arrays have different probe_mid_block id's (or ordering?)")
+
+
+        new_data = pd.DataFrame({
+            'probe_ids': self.data_idat_ref.per_probe_matrix["probe_ids"],
+            
+            'probe_std_devs': round((self.data_idat_ref.per_probe_matrix["probe_std_devs"] * (1 - mixed_in_fraction)) + (idat_mixed_in.per_probe_matrix["probe_std_devs"] * (mixed_in_fraction))).to_numpy("<u2"),
+            'probe_mean_intensities': round((self.data_idat_ref.per_probe_matrix["probe_mean_intensities"] * (1 - mixed_in_fraction)) + (idat_mixed_in.per_probe_matrix["probe_mean_intensities"] * (mixed_in_fraction))).to_numpy("<u2"),
+            'probe_n_beads': round((self.data_idat_ref.per_probe_matrix["probe_n_beads"] * (1 - mixed_in_fraction)) + (idat_mixed_in.per_probe_matrix["probe_n_beads"] * (mixed_in_fraction))).to_numpy("<u1"),
+            
+            'probe_mid_block': self.data_idat_ref.per_probe_matrix["probe_mid_block"]
+            })
         
+        mixed_data.set_per_probe_matrix(new_data)
+
+        if len(self.data_idat_ref.array_run_info) != len(idat_mixed_in.array_run_info):
+            raise Exception("different array_run_info size")
+        else:
+            ri = []
+            for i in range(len(self.data_idat_ref.array_run_info)):
+                rir = (
+                    self.data_idat_ref.get_sentrix_id() + ":" + self.data_idat_ref.array_run_info[i][0] + "&" + \
+                    idat_mixed_in.get_sentrix_id() + ":" + idat_mixed_in.array_run_info[i][0],
+                    self.data_idat_ref.get_sentrix_id() + ":" + self.data_idat_ref.array_run_info[i][1] + "&" + \
+                    idat_mixed_in.get_sentrix_id() + ":" + idat_mixed_in.array_run_info[i][1],
+                    self.data_idat_ref.get_sentrix_id() + ":" + self.data_idat_ref.array_run_info[i][2] + "&" + \
+                    idat_mixed_in.get_sentrix_id() + ":" + idat_mixed_in.array_run_info[i][2],
+                    self.data_idat_ref.get_sentrix_id() + ":" + self.data_idat_ref.array_run_info[i][3] + "&" + \
+                    idat_mixed_in.get_sentrix_id() + ":" + idat_mixed_in.array_run_info[i][3],
+                    self.data_idat_ref.get_sentrix_id() + ":" + self.data_idat_ref.array_run_info[i][4] + "&" + \
+                    idat_mixed_in.get_sentrix_id() + ":" + idat_mixed_in.array_run_info[i][4]
+                )
+
+                ri.append(rir)
+            
+        mixed_data.set_array_run_info(ri)
         
-        self.array_chip_label = None
-        self.array_old_style_manifest = None
-        self.array_unknown_1 = None
-        self.array_sample_id = None
-        self.array_description = None
-        self.array_plate = None
-        self.array_well = None
-        self.array_unknown_2 = None
-
-        self.array_barcode = None
-        self.array_chip_label = None
-
-        self.per_probe_matrix = None
-        self.array_run_info: None
-"""
+        return mixed_data
 
 
 
