@@ -5,7 +5,7 @@
 # https://github.com/bioinformed/glu-genetics/blob/dcbbbf67a308d35e157b20a9c76373530510379a/glu/lib/illumina.py#L44-L61
 
 
-from parser import *
+from .parser import *
 from pathlib import Path
 import re
 
@@ -690,25 +690,6 @@ class IDATmixer:
             mixed_data.set_idat_version = self.data_idat_ref.idat_version
 
 
-
-
-
-
-
-
-d_red = IDATreader(Path("GSM6379997_203927450093_R01C01_Red.idat"))
-d_grn = IDATreader(Path("GSM6379997_203927450093_R01C01_Grn.idat"))
-
-w = IDATwriter(d_red.data)
-w.write(Path("test_Red.idat"))
-
-w = IDATwriter(d_grn.data)
-w.write(Path("test_Grn.idat"))
-
-
-mix = IDATmixer(d_red.data)
-mix.mix(d_grn.data, 0.5, Path("mix_0.5.idat"))
-    
 
 
 

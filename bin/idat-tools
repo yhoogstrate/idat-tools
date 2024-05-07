@@ -3,3 +3,53 @@
 # vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4 textwidth=79:
 
 
+import click
+from idattools.parse_idat import IDATreader
+from pathlib import Path
+
+
+def main():
+    CLI()
+
+
+#@click.version_option(drdisco.__version__ + "\n\n" + drdisco.__license_notice__ + "\n\nCopyright (C) 2017  " + drdisco.__author__ + ".\n\nFor more info please visit:\n" + drdisco.__homepage__)
+@click.group()
+def CLI():
+    pass
+
+
+
+@CLI.command(name="view", short_help="View IDAT details (with [small] data summary)")
+@click.argument('idat_file', type=click.Path(exists=True))
+def CLI_view(idat_file):
+    idat_r = IDATreader(Path(idat_file))
+    print(str(idat_r.data))
+
+
+if __name__ == '__main__':
+    main()
+
+
+
+
+
+
+
+
+"""
+d_red = IDATreader(Path("GSM6379997_203927450093_R01C01_Red.idat"))
+d_grn = IDATreader(Path("GSM6379997_203927450093_R01C01_Grn.idat"))
+
+w = IDATwriter(d_red.data)
+w.write(Path("test_Red.idat"))
+
+w = IDATwriter(d_grn.data)
+w.write(Path("test_Grn.idat"))
+
+
+mix = IDATmixer(d_red.data)
+mix.mix(d_grn.data, 0.5, Path("mix_0.5.idat"))
+"""
+
+
+
