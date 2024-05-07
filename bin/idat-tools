@@ -4,7 +4,8 @@
 
 
 import click
-from idattools.parse_idat import IDATreader
+import idattools
+from idattools import parse_idat
 from pathlib import Path
 
 
@@ -12,7 +13,7 @@ def main():
     CLI()
 
 
-#@click.version_option(drdisco.__version__ + "\n\n" + drdisco.__license_notice__ + "\n\nCopyright (C) 2017  " + drdisco.__author__ + ".\n\nFor more info please visit:\n" + drdisco.__homepage__)
+@click.version_option(idattools.__version__ + "\n\n" + idattools.__license_notice__ + "\n\nCopyright (C) 2024  " + idattools.__author__ + ".\n\nFor more info please visit:\n" + idattools.__homepage__)
 @click.group()
 def CLI():
     pass
@@ -22,7 +23,7 @@ def CLI():
 @CLI.command(name="view", short_help="View IDAT details (with [small] data summary)")
 @click.argument('idat_file', type=click.Path(exists=True))
 def CLI_view(idat_file):
-    idat_r = IDATreader(Path(idat_file))
+    idat_r = idattools.parse_idat.IDATreader(Path(idat_file))
     print(str(idat_r.data))
 
 
