@@ -47,10 +47,6 @@ def CLI_mix(idat_file_reference, idat_file_mixed_in, idat_file_output, mix_ratio
 
     m = IDATmixer(idat_ref.data)
     idat_new = m.mix(idat_mix.data, mix_ratio, Path(idat_file_output))
-    
-    #print(idat_ref.data)
-    #print(idat_mix.data)
-    #print(idat_new)
 
 
 
