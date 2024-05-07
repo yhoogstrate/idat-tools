@@ -734,6 +734,11 @@ class IDATmixer:
         else:
             mixed_data.set_array_chip_type(self.data_idat_ref.array_chip_type)
 
+        if self.data_idat_ref.array_manifest != idat_mixed_in.array_manifest:
+            raise Exception("Differences in old_style_manifest value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_manifest(self.data_idat_ref.array_manifest)
+
         if self.data_idat_ref.array_old_style_manifest != idat_mixed_in.array_old_style_manifest:
             raise Exception("Differences in old_style_manifest value - odd, since this value seems to be always ''")
         else:
@@ -805,7 +810,7 @@ class IDATmixer:
             
             'probe_mid_block': self.data_idat_ref.per_probe_matrix["probe_mid_block"]
             })
-        
+
         mixed_data.set_per_probe_matrix(new_data)
 
         if len(self.data_idat_ref.array_run_info) != len(idat_mixed_in.array_run_info):
@@ -829,6 +834,9 @@ class IDATmixer:
                 ri.append(rir)
             
         mixed_data.set_array_run_info(ri)
+        
+        w = IDATwriter(mixed_data)
+        w.write(output_file)
         
         return mixed_data
 
