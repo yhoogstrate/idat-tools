@@ -4,8 +4,10 @@
 
 
 import click
+
 import idattools
-from idattools import parse_idat
+from idattools.idat import *
+
 from pathlib import Path
 
 
@@ -23,15 +25,12 @@ def CLI():
 @CLI.command(name="view", short_help="View IDAT details (with [small] data summary)")
 @click.argument('idat_file', type=click.Path(exists=True))
 def CLI_view(idat_file):
-    idat_r = idattools.parse_idat.IDATreader(Path(idat_file))
+    idat_r = IDATreader(Path(idat_file))
     print(str(idat_r.data))
 
 
 if __name__ == '__main__':
     main()
-
-
-
 
 
 
@@ -51,6 +50,5 @@ w.write(Path("test_Grn.idat"))
 mix = IDATmixer(d_red.data)
 mix.mix(d_grn.data, 0.5, Path("mix_0.5.idat"))
 """
-
 
 

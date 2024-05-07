@@ -5,7 +5,7 @@
 # https://github.com/bioinformed/glu-genetics/blob/dcbbbf67a308d35e157b20a9c76373530510379a/glu/lib/illumina.py#L44-L61
 
 
-from .parser import *
+from .utils import *
 from pathlib import Path
 import re
 
