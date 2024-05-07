@@ -1,7 +1,7 @@
 idat-tools
 ==========
 
-python toolkit to analyse, view and modify idat files.
+python toolkit to analyse, view and modify (mix) idat files.
 
 
 Installation:
