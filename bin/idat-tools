@@ -37,12 +37,15 @@ def CLI_view(idat_file):
 def CLI_mix(idat_file_reference, idat_file_mixed_in, idat_file_output, mix_ratio):
     idat_ref = IDATreader(Path(idat_file_reference))
     idat_mix = IDATreader(Path(idat_file_mixed_in))
+
     idattools.log.debug("Mixing: " + idat_ref.data.get_sentrix_id() + \
                                  " ["+str(round((1-mix_ratio) * 100,2))+"%]" + \
                                  " and " + \
                                  idat_mix.data.get_sentrix_id() + \
                                  " ["+str(round((mix_ratio) * 100,2))+"%]")
-    #print(str(idat_r.data))
+
+    mix = IDATmixer(idat_ref.data)
+    mix.mix(idat_mix.data, mix_ratio, Path(idat_file_output))
 
 
 

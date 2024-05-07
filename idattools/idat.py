@@ -4,8 +4,9 @@
 # https://github.com/HenrikBengtsson/illuminaio/blob/develop/R/readIDAT_nonenc.R
 # https://github.com/bioinformed/glu-genetics/blob/dcbbbf67a308d35e157b20a9c76373530510379a/glu/lib/illumina.py#L44-L61
 
-
+import idattools # log
 from .utils import *
+
 from pathlib import Path
 import re
 
@@ -679,17 +680,110 @@ class IDATmixer:
         else:
             raise Exception("Unclear input type (idat_mixed_in)")
 
+        idattools.log.debug("Initializing new IDATdata object")
         mixed_data = IDATdata()
+        # check file_magic
         if self.data_idat_ref.file_magic != idat_mixed_in.file_magic:
-            raise Exception("Different file magic's between reference and mixed-in sample")
+            raise Exception("Different file magic's between reference and mixed-in sample - should never happen")
         else:
             mixed_data.set_file_magic = self.data_idat_ref.file_magic
-            
+
+        # check idat_version
         if self.data_idat_ref.idat_version != idat_mixed_in.idat_version:
             raise Exception("Different idat versions between reference and mixed-in sample")
         else:
             mixed_data.set_idat_version = self.data_idat_ref.idat_version
 
+        if self.data_idat_ref.section_index_order !=  idat_mixed_in.section_index_order:
+            idattools.log.warning("Order in which indexes are written differs, using the order from 'ref'")
+        mixed_data.set_section_index_order(self.data_idat_ref.section_index_order)
+
+        if self.data_idat_ref.section_physical_order !=  idat_mixed_in.section_physical_order:
+            idattools.log.warning("Order in which sections are written differs, using the order from 'ref'")
+        mixed_data.set_section_physical_order(self.data_idat_ref.section_physical_order)
+
+        if self.data_idat_ref.array_n_probes != idat_mixed_in.array_n_probes:
+            raise Exception("Different sized arrays are merged - has to be looked into, taking intersection may be an option")
+        else:
+            mixed_data.set_array_n_probes(self.data_idat_ref.array_n_probes)
+
+        if self.data_idat_ref.array_red_green != idat_mixed_in.array_red_green:
+            raise Exception("Differences in red_green value - odd, since this value seems to be always 0")
+        else:
+            mixed_data.set_array_red_green(self.data_idat_ref.array_red_green)
+
+        if self.data_idat_ref.array_chip_type != idat_mixed_in.array_chip_type:
+            raise Exception("Incompatible chip types: " + str(self.data_idat_ref.array_chip_type) + " and " + str(idat_mixed_in.array_chip_type))
+
+        if self.data_idat_ref.array_old_style_manifest != idat_mixed_in.array_old_style_manifest:
+            raise Exception("Differences in old_style_manifest value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_old_style_manifest(self.data_idat_ref.array_old_style_manifest)
+
+        if self.data_idat_ref.array_unknown_1 != idat_mixed_in.array_unknown_1:
+            raise Exception("Differences in unknown_1 value - odd, since this value seems to be always 4x0")
+        else:
+            mixed_data.set_array_unknown_1(self.data_idat_ref.array_unknown_1)
+
+        if self.data_idat_ref.array_sample_id != idat_mixed_in.array_sample_id:
+            raise Exception("Differences in sample_id value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_sample_id(self.data_idat_ref.array_sample_id)
+
+        if self.data_idat_ref.array_description != idat_mixed_in.array_description:
+            raise Exception("Differences in description value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_description(self.data_idat_ref.array_description)
+
+        if self.data_idat_ref.array_plate != idat_mixed_in.array_plate:
+            raise Exception("Differences in plate value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_plate(self.data_idat_ref.array_plate)
+
+        if self.data_idat_ref.array_well != idat_mixed_in.array_well:
+            raise Exception("Differences in well value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_well(self.data_idat_ref.array_well)
+
+        if self.data_idat_ref.array_unknown_2 != idat_mixed_in.array_unknown_2:
+            raise Exception("Differences in unknown_2 value - odd, since this value seems to be always ''")
+        else:
+            mixed_data.set_array_unknown_2(self.data_idat_ref.array_unknown_2)
+
+        if not re.match("^[0-9]{12}_R[0-9]{2}C[0-9]{2}.+idat$", os.path.basename(output_file)):
+            # @todo create some has of all the new data, and convert it to numeric weights (reproducible rather than random identifiers)
+            sentrix_id = "20"
+            for i in range(10):
+                sentrix_id += str(random.randint(0,9))
+            sentrix_id += "R0" + str(random.randint(1,8)) + "C01"
+            
+            idattools.warning("Output file does not comply with sentrix_id nomenclature ('012345678012_R0x_C0y.idat'), generating random one: ")
+
+"""
+        self.file_magic = None
+        self.idat_version = None
+        self.section_index_order = None # the order of sections in index is typically different from implementation in the body
+        self.section_physical_order = None        
+        self.array_n_probes = None
+        self.array_red_green = None
+        self.array_manifest = None
+        
+        
+        self.array_chip_label = None
+        self.array_old_style_manifest = None
+        self.array_unknown_1 = None
+        self.array_sample_id = None
+        self.array_description = None
+        self.array_plate = None
+        self.array_well = None
+        self.array_unknown_2 = None
+
+        self.array_barcode = None
+        self.array_chip_type = None
+
+        self.per_probe_matrix = None
+        self.array_run_info: None
+"""
 
 
 
