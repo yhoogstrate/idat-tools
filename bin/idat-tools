@@ -29,6 +29,19 @@ def CLI_view(idat_file):
     print(str(idat_r.data))
 
 
+@CLI.command(name="mix", short_help="View IDAT details (with [small] data summary)")
+@click.argument('idat_file_reference', type=click.Path(exists=True))
+@click.argument('idat_file_mixed_in', type=click.Path(exists=True))
+@click.option('-r', '--mix-ratio', type=click.FloatRange(min=0, max=1), default=0.5, help="Fraction of mixed-in file values to be mixed into reference file. E.g. 0.25 results in 75% of reference and 25% of mixed-in file.", show_default=1)
+def CLI_view(idat_file_reference, idat_file_mixed_in, mixed_in_ratio):
+    idat_ref = IDATreader(Path(idat_file_reference))
+    idat_mix = IDATreader(Path(idat_file_mixed_in))
+    print("mixing to go: ", mixed_in_ratio)
+    #print(str(idat_r.data))
+
+
+
+
 if __name__ == '__main__':
     main()
 
