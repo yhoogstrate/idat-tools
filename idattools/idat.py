@@ -8,11 +8,12 @@ import idattools # log
 from .utils import *
 
 from pathlib import Path
+import os
 import re
+import random
 
 from beartype import beartype
-from _io import BufferedReader
-from _io import BufferedWriter
+from _io import BufferedReader, BufferedWriter
 
 import numpy as np
 from numpy import ndarray
@@ -750,14 +751,21 @@ class IDATmixer:
         else:
             mixed_data.set_array_unknown_2(self.data_idat_ref.array_unknown_2)
 
-        if not re.match("^[0-9]{12}_R[0-9]{2}C[0-9]{2}.+idat$", os.path.basename(output_file)):
+        if re.match("^[0-9]{12}_R[0-9]{2}C[0-9]{2}.+idat$", os.path.basename(output_file)):
+            barcode = os.path.basename(output_file).split("_")[0]
+            chip_label = os.path.basename(output_file).split("_")[1][0:6]
+        else:
             # @todo create some has of all the new data, and convert it to numeric weights (reproducible rather than random identifiers)
-            sentrix_id = "20"
+            barcode = "20"
             for i in range(10):
-                sentrix_id += str(random.randint(0,9))
-            sentrix_id += "R0" + str(random.randint(1,8)) + "C01"
-            
-            idattools.warning("Output file does not comply with sentrix_id nomenclature ('012345678012_R0x_C0y.idat'), generating random one: ")
+                barcode += str(random.randint(0,9))
+
+            chip_label = "R0" + str(random.randint(1,8)) + "C01"
+
+            idattools.log.warning("Output file does not comply with sentrix_id nomenclature ('012345678012_R0x_C0y.idat'), generating random one: "+str(barcode) + "_" + str(chip_label))
+
+        mixed_data.set_array_barcode(barcode)
+        mixed_data.set_array_chip_label(chip_label)
 
 """
         self.file_magic = None
@@ -779,7 +787,7 @@ class IDATmixer:
         self.array_unknown_2 = None
 
         self.array_barcode = None
-        self.array_chip_type = None
+        self.array_chip_label = None
 
         self.per_probe_matrix = None
         self.array_run_info: None
