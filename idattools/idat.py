@@ -74,7 +74,7 @@ class IDATdata(object):
     def __str__(self):
         out = ""
 
-        out += "# array_n_probes:       '" + str(self.array_n_probes) + "'\n"
+        out += "# array_n_probes:       " + str(self.array_n_probes) + "\n"
         out += "# manifest:             '" + str(self.array_manifest) + "'\n"
         out += "# manifest (old style): '" + str(self.array_old_style_manifest) + "'\n"
         out += "# unknown #1:           [" + "][".join([str(_) for _ in self.array_unknown_1]) + "]\n"
@@ -720,11 +720,6 @@ class IDATmixer:
             idattools.log.warning("Order in which sections are written differs, using the order from 'ref'")
         mixed_data.set_section_physical_order(self.data_idat_ref.section_physical_order)
 
-        if self.data_idat_ref.array_n_probes != idat_mixed_in.array_n_probes:
-            raise Exception("Different sized arrays are merged ("+str(self.data_idat_ref.array_n_probes)+" ~ "+str(idat_mixed_in.array_n_probes)+") - has to be looked into, taking intersection may be an option")
-        else:
-            mixed_data.set_array_n_probes(self.data_idat_ref.array_n_probes)
-
         if self.data_idat_ref.array_red_green != idat_mixed_in.array_red_green:
             raise Exception("Differences in red_green value - odd, since this value seems to be always 0")
         else:
@@ -795,24 +790,47 @@ class IDATmixer:
         if np.any(self.data_idat_ref.per_probe_matrix.columns != idat_mixed_in.per_probe_matrix.columns):
             raise Exception("Different data columns in the arrays")
 
-        if np.any(self.data_idat_ref.per_probe_matrix["probe_ids"] != idat_mixed_in.per_probe_matrix["probe_ids"]):
-            raise Exception("Arrays have different probe_ids (or ordering?)")
 
-        if np.any(self.data_idat_ref.per_probe_matrix["probe_mid_block"] != idat_mixed_in.per_probe_matrix["probe_mid_block"]):
+        data_left = self.data_idat_ref.per_probe_matrix
+        data_right = idat_mixed_in.per_probe_matrix
+        if self.data_idat_ref.array_n_probes != idat_mixed_in.array_n_probes:
+            idattools.log.warning("Different sized arrays are merged ("+str(self.data_idat_ref.array_n_probes)+" ~ "+str(idat_mixed_in.array_n_probes)+") - reduing to intersect:")
+            
+            shared_probes = set(data_left["probe_ids"]).intersection(set(data_right["probe_ids"]))
+            
+            data_left = data_left[data_left["probe_ids"].isin(shared_probes)].reset_index(drop=True)
+            data_right = data_right[data_right["probe_ids"].isin(shared_probes)].reset_index(drop=True)
+
+            data_left_midblock = data_left[data_left["probe_ids"].isin(shared_probes)].reset_index(drop=True)
+            data_right_midblock = data_right[data_right["probe_ids"].isin(shared_probes)].reset_index(drop=True)
+
+            mixed_data.set_array_n_probes(len(shared_probes))
+            
+            idattools.log.warning("Size intersected array: " + str(len(shared_probes)) + " probes")
+            
+        else:
+            mixed_data.set_array_n_probes(self.data_idat_ref.array_n_probes)
+
+        if np.any(data_left["probe_ids"] != data_right["probe_ids"]):
+            raise Exception("Arrays have different probe_ids (or ordering?)")
+            
+        if np.any(data_left["probe_mid_block"] != data_right["probe_mid_block"]):
             raise Exception("Arrays have different probe_mid_block id's (or ordering?)")
 
 
         new_data = pd.DataFrame({
-            'probe_ids': self.data_idat_ref.per_probe_matrix["probe_ids"],
+            'probe_ids': data_left["probe_ids"],
             
-            'probe_std_devs': round((self.data_idat_ref.per_probe_matrix["probe_std_devs"] * (1 - mixed_in_fraction)) + (idat_mixed_in.per_probe_matrix["probe_std_devs"] * (mixed_in_fraction))).to_numpy("<u2"),
-            'probe_mean_intensities': round((self.data_idat_ref.per_probe_matrix["probe_mean_intensities"] * (1 - mixed_in_fraction)) + (idat_mixed_in.per_probe_matrix["probe_mean_intensities"] * (mixed_in_fraction))).to_numpy("<u2"),
-            'probe_n_beads': round((self.data_idat_ref.per_probe_matrix["probe_n_beads"] * (1 - mixed_in_fraction)) + (idat_mixed_in.per_probe_matrix["probe_n_beads"] * (mixed_in_fraction))).to_numpy("<u1"),
+            'probe_std_devs': round((data_left["probe_std_devs"] * (1 - mixed_in_fraction)) + (data_right["probe_std_devs"] * (mixed_in_fraction))).to_numpy("<u2"),
+            'probe_mean_intensities': round((data_left["probe_mean_intensities"] * (1 - mixed_in_fraction)) + (data_right["probe_mean_intensities"] * (mixed_in_fraction))).to_numpy("<u2"),
+            'probe_n_beads': round((data_left["probe_n_beads"] * (1 - mixed_in_fraction)) + (data_right["probe_n_beads"] * (mixed_in_fraction))).to_numpy("<u1"),
             
-            'probe_mid_block': self.data_idat_ref.per_probe_matrix["probe_mid_block"]
+            'probe_mid_block': data_left["probe_mid_block"]
             })
 
         mixed_data.set_per_probe_matrix(new_data)
+
+
 
         if len(self.data_idat_ref.array_run_info) != len(idat_mixed_in.array_run_info):
             raise Exception("different array_run_info size")
