@@ -73,7 +73,8 @@ class IDATdata(object):
 
     def __str__(self):
         out = ""
-        
+
+        out += "# array_n_probes:       '" + str(self.array_n_probes) + "'\n"
         out += "# manifest:             '" + str(self.array_manifest) + "'\n"
         out += "# manifest (old style): '" + str(self.array_old_style_manifest) + "'\n"
         out += "# unknown #1:           [" + "][".join([str(_) for _ in self.array_unknown_1]) + "]\n"
