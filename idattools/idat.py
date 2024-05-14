@@ -720,7 +720,7 @@ class IDATmixer:
         mixed_data.set_section_physical_order(self.data_idat_ref.section_physical_order)
 
         if self.data_idat_ref.array_n_probes != idat_mixed_in.array_n_probes:
-            raise Exception("Different sized arrays are merged - has to be looked into, taking intersection may be an option")
+            raise Exception("Different sized arrays are merged ("+str(self.data_idat_ref.array_n_probes)+" ~ "+str(idat_mixed_in.array_n_probes)+") - has to be looked into, taking intersection may be an option")
         else:
             mixed_data.set_array_n_probes(self.data_idat_ref.array_n_probes)
 
