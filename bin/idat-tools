@@ -40,9 +40,8 @@ def CLI_view(idat_file, n):
 @click.argument('idat_file_reference', type=click.Path(exists=True))
 @click.argument('idat_file_mixed_in', type=click.Path(exists=True))
 @click.argument('idat_file_output', type=click.Path(exists=False))
-@click.option('-m', '--mix-ratio', type=click.FloatRange(min=0, max=1), default=0.5, help="Fraction of mixed-in file values to be mixed into reference file. E.g. 0.25 results in 75% of reference and 25% of mixed-in file.", show_default=1)
-@click.option('-r', '--rebalance-ratio', type=click.FloatRange(min=0, max=1), click.FloatRange(min=0), default=1.0, help="Rebalancing fract for total array intensity. If total intensity of the mixed-in array is 3.0 times higher, fraction should be set to 0.33.", show_default=1)
-def CLI_mix(idat_file_reference, idat_file_mixed_in, idat_file_output, mix_ratio, rebalance_ratio):
+@click.option('-r', '--mix-ratio', type=click.FloatRange(min=0, max=1), default=0.5, help="Fraction of mixed-in file values to be mixed into reference file. E.g. 0.25 results in 75% of reference and 25% of mixed-in file.", show_default=1)
+def CLI_mix(idat_file_reference, idat_file_mixed_in, idat_file_output, mix_ratio):
     idat_ref = IDATreader(Path(idat_file_reference))
     idat_mix = IDATreader(Path(idat_file_mixed_in))
 
@@ -54,7 +53,7 @@ def CLI_mix(idat_file_reference, idat_file_mixed_in, idat_file_output, mix_ratio
 
 
     m = IDATmixer(idat_ref.data)
-    idat_new = m.mix(idat_mix.data, mix_ratio, rebalance_ratio, Path(idat_file_output))
+    idat_new = m.mix(idat_mix.data, mix_ratio, Path(idat_file_output))
 
 
 
