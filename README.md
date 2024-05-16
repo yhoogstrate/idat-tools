@@ -4,7 +4,9 @@ idat-tools
 python toolkit to analyse, view and modify (mix) idat files.
 
 
-Installation:
+## Installation: ##
+
+Installation with python 3.6 did not work, installation through python 3.9 did, probably caused by some legacy stuff in the `beartype` library.
 
 ```{bash}
 git clone https://github.com/yhoogstrate/idat-tools.git

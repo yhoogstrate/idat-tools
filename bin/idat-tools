@@ -58,7 +58,6 @@ def CLI_mix(idat_file_reference, idat_file_mixed_in, idat_file_output, mix_ratio
 
 
 
-
 if __name__ == '__main__':
     main()
 
