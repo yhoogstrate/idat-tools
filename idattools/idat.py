@@ -211,8 +211,8 @@ class IDATdata(object):
 
     @beartype
     def set_array_chip_type(self, array_chip_type: str) -> str:
-        if array_chip_type != "BeadChip 8x5":
-            raise Exception("This tool is not tested with other chip types than BeadChip 8x5")
+        if array_chip_type not in ["BeadChip 8x5", "BeadChip 12x8"]:
+            raise Exception("[%s] This tool is not tested with other chip types than BeadChip 8x5", array_chip_type)
         
         self.array_chip_type = array_chip_type
         return self.array_chip_type
