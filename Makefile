@@ -1,9 +1,26 @@
 
 
-test:
+
+GSM6379997_203927450093_R01C01_Grn.idat:
 	wget https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM6379nnn/GSM6379997/suppl/GSM6379997%5F203927450093%5FR01C01%5FGrn.idat.gz ;
+	gunzip GSM6379997_203927450093_R01C01_Grn.idat.gz
+
+GSM6379997_203927450093_R01C01_Red.idat:
 	wget https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM6379nnn/GSM6379997/suppl/GSM6379997%5F203927450093%5FR01C01%5FRed.idat.gz ;
-	wget "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM5720495&format=file&file=GSM5720495%5F10003886252%5FR01C01%5FGrn%2Eidat%2Egz" ;
-	wget "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM5720495&format=file&file=GSM5720495%5F10003886252%5FR01C01%5FRed%2Eidat%2Egz" ;
-	gunzip *.idat.gz
+	gunzip GSM6379997_203927450093_R01C01_Red.idat.gz
+
+
+GSM5720495_10003886252_R01C01_Grn.idat:
+	wget -O GSM5720495_10003886252_R01C01_Grn.idat.gz "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM5720495&format=file&file=GSM5720495%5F10003886252%5FR01C01%5FGrn%2Eidat%2Egz" ;
+	gunzip GSM5720495_10003886252_R01C01_Grn.idat.gz
+
+GSM5720495_10003886252_R01C01_Red.idat:
+	wget -O GSM5720495_10003886252_R01C01_Red.idat.gz "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM5720495&format=file&file=GSM5720495%5F10003886252%5FR01C01%5FRed%2Eidat%2Egz" ;
+	gunzip GSM5720495_10003886252_R01C01_Red.idat.gz
+
+
+
+
+test: GSM5720495_10003886252_R01C01_Grn.idat GSM5720495_10003886252_R01C01_Red.idat GSM6379997_203927450093_R01C01_Grn.idat GSM6379997_203927450093_R01C01_Red.idat
+	echo "Done"
 
