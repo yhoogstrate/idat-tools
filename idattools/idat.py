@@ -11,6 +11,7 @@ from pathlib import Path
 import os
 import re
 import random
+import warnings
 
 from beartype import beartype
 from _io import BufferedReader, BufferedWriter
@@ -220,7 +221,9 @@ class IDATdata(object):
 
     @beartype
     def set_array_chip_label(self, array_chip_label: str) -> str:
-        if not re.match(r"^R[0-9]+C[0-9]+$", array_chip_label):
+        if re.match(r"^R[0-9]+C[0-9]+_[0-9]$", array_chip_label):
+            warnings.warn(f"Obscure but accepted array chip label: {array_chip_label}", UserWarning) # Seen happening in GSM8784882 and GSM8784883 ~ probably hacked and not original format ...
+        elif not re.match(r"^R[0-9]+C[0-9]+$", array_chip_label):
             raise Exception(f"Odd label: {array_chip_label}")
         
         self.array_chip_label = array_chip_label
