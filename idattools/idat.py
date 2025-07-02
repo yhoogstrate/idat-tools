@@ -221,7 +221,7 @@ class IDATdata(object):
     @beartype
     def set_array_chip_label(self, array_chip_label: str) -> str:
         if not re.match(r"^R[0-9]+C[0-9]+$", array_chip_label):
-            raise Exception("Odd label: " + array_chip_label)
+            raise Exception(f"Odd label: {array_chip_label}")
         
         self.array_chip_label = array_chip_label
         return self.array_chip_label
@@ -478,7 +478,11 @@ class IDATreader:
     def parse_array_chip_label(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
         fh_in.seek(section_seek_index['ARRAY_CHIP_LABEL'])
         
-        return self.data.set_array_chip_label(read_string(fh_in))
+        try:
+            return self.data.set_array_chip_label(read_string(fh_in))
+        
+        except Exception as e:
+            raise Exception(f"File: {self.idat_filename} -- an error occurred: {e}")
 
     @beartype
     def parse_array_old_style_manifest(self, fh_in: BufferedReader, section_seek_index: dict) -> str:
